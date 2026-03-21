@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Button from './Button';
 
 /**
- * PWA Install Banner — shows after the user completes their first exercise session.
+ * PWA Install Banner — shows right after onboarding completes.
  * "Add SweatNScroll to your home screen for the full experience"
  * Never shows again if dismissed twice.
  */
@@ -94,7 +94,7 @@ const styles = {
     transform: 'translateX(-50%)',
     width: 'calc(100% - 32px)',
     maxWidth: 400,
-    background: '#1A1A28',
+    background: '#141850',
     border: '1px solid rgba(232,83,58,0.3)',
     borderRadius: 16,
     padding: '16px 18px',

@@ -88,7 +88,7 @@ function AppShell() {
         </Routes>
       </div>
       <NavBar />
-      {state.sessionsCompleted >= 1 && <InstallPrompt />}
+      <InstallPrompt />
     </div>
   );
 }

@@ -47,6 +47,11 @@ export default function SettingsScreen() {
       <div style={styles.sectionLabel}>Account</div>
       <div style={styles.card}>
         <SettingRow label="Tier" value={state.tier === 'free' ? 'Free' : 'Standard'} />
+        <SettingRow
+          label="Avatar"
+          value={state.gender === 'female' ? '🙋‍♀️ Female' : '🙋‍♂️ Male'}
+          onClick={() => dispatch({ type: 'TOGGLE_GENDER' })}
+        />
         <SettingRow label="Upgrade" value="View plans" onClick={() => dispatch({ type: 'SHOW_PRICING' })} />
       </div>
 

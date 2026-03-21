@@ -1,8 +1,17 @@
 import React, { useState, useContext } from 'react';
 import Button from '../components/Button';
+import LevelAvatar from '../components/LevelAvatar';
 import { AppContext } from '../AppContext';
 
 const steps = [
+  {
+    question: 'Choose your avatar',
+    subtitle: 'Your avatar gets fitter as you level up!',
+    options: [
+      { emoji: '🙋‍♂️', text: 'Male' },
+      { emoji: '🙋‍♀️', text: 'Female' },
+    ],
+  },
   {
     question: "What's your main goal?",
     subtitle: 'This helps us customize your experience',
@@ -106,6 +115,17 @@ export default function OnboardingScreen() {
         {/* Question */}
         <div style={styles.question}>{step.question}</div>
         <div style={styles.subtitle}>{step.subtitle}</div>
+
+        {/* Avatar preview on gender step */}
+        {currentStep === 0 && selections[0] && (
+          <div style={{ display: 'flex', justifyContent: 'center', margin: '12px 0 8px' }}>
+            <LevelAvatar
+              level={1}
+              gender={selections[0] === 'Male' ? 'male' : 'female'}
+              size={100}
+            />
+          </div>
+        )}
 
         {/* Options */}
         {step.options.map((option, i) => {

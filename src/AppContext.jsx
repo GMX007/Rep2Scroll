@@ -16,6 +16,7 @@ const initialState = {
   disclaimerAccepted: false,
 
   // User
+  gender: 'male', // 'male' | 'female'
   tier: 'free', // 'free' | 'standard'
   userEquipment: [], // e.g. ['Dumbbells', 'Pull-up Bar']
   showEquipmentSetup: false,
@@ -107,8 +108,11 @@ function calculateMinutesEarned(exercise, reps, holdTime) {
 
 function reducer(state, action) {
   switch (action.type) {
-    case 'COMPLETE_ONBOARDING':
-      return { ...state, onboardingComplete: true };
+    case 'COMPLETE_ONBOARDING': {
+      // payload.selections[0] is 'Male' or 'Female' from the gender step
+      const genderChoice = action.payload?.[0] === 'Female' ? 'female' : 'male';
+      return { ...state, onboardingComplete: true, gender: genderChoice };
+    }
 
     case 'ACCEPT_DISCLAIMER':
       return { ...state, disclaimerAccepted: true };
@@ -307,6 +311,9 @@ function reducer(state, action) {
         repsCompleted: 0,
       };
     }
+
+    case 'TOGGLE_GENDER':
+      return { ...state, gender: state.gender === 'male' ? 'female' : 'male' };
 
     case 'SHOW_PRICING':
       return { ...state, showPricing: true };

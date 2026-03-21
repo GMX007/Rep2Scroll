@@ -1,5 +1,6 @@
 import React, { useContext } from 'react';
 import Button from '../components/Button';
+import LevelAvatar from '../components/LevelAvatar';
 import { AppContext } from '../AppContext';
 import { getLevelForXP } from '../data/levels';
 
@@ -18,7 +19,7 @@ export default function LevelUpScreen() {
 
       {/* Avatar */}
       <div style={styles.avatar}>
-        {level.emoji}
+        <LevelAvatar level={level.level} gender={state.gender} size={90} />
         <div style={styles.avatarRing} />
       </div>
 
@@ -82,9 +83,9 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: 64,
     boxShadow: '0 0 40px rgba(240,165,0,0.25), 0 0 80px rgba(240,165,0,0.1)',
     position: 'relative',
+    overflow: 'hidden',
   },
   avatarRing: {
     position: 'absolute',

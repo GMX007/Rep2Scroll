@@ -1,5 +1,6 @@
 import React, { useContext } from 'react';
 import { AppContext } from '../AppContext';
+import LevelAvatar from '../components/LevelAvatar';
 import { getLevelForXP, getXPProgress } from '../data/levels';
 
 export default function ProgressScreen() {
@@ -21,10 +22,13 @@ export default function ProgressScreen() {
       {/* Level progress */}
       <div style={styles.levelCard}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <div>
-            <div style={{ fontSize: 11, color: '#9AA0B8', textTransform: 'uppercase', letterSpacing: 1 }}>Current Level</div>
-            <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: '#F0A500' }}>
-              {current.emoji} {current.name}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <LevelAvatar level={current.level} gender={state.gender} size={56} />
+            <div>
+              <div style={{ fontSize: 11, color: '#9AA0B8', textTransform: 'uppercase', letterSpacing: 1 }}>Current Level</div>
+              <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 24, color: '#F0A500' }}>
+                {current.emoji} {current.name}
+              </div>
             </div>
           </div>
           <div style={{ textAlign: 'right' }}>
