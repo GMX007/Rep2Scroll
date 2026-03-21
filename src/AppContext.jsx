@@ -4,11 +4,11 @@ import { getLevelForXP } from './data/levels';
 import { DAILY_CAP_MINUTES, GRACE_PERIOD_SECONDS, earningRates } from './theme/tokens';
 
 /**
- * FitLock App State Management
+ * SweatNScroll App State Management
  * Handles: effort bar, reps, sessions, XP, settings, onboarding flow
  */
 
-const STORAGE_KEY = 'fitlock_state';
+const STORAGE_KEY = 'sweatnscroll_state';
 
 const initialState = {
   // Onboarding

@@ -110,7 +110,7 @@ export default function ProgressScreen() {
 
 const styles = {
   screen: {
-    background: '#0D0D14',
+    background: '#080D2E',
     minHeight: '100%',
     padding: '16px 0 100px',
   },

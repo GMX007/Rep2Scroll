@@ -27,7 +27,7 @@ export default function EquipmentScreen() {
       <div style={styles.bgGlow} />
 
       <div style={styles.content}>
-        <div style={styles.logo}>FITLOCK</div>
+        <div style={styles.logo}>SWEATNSCROLL</div>
         <div style={styles.badge}>STANDARD</div>
         <div style={styles.title}>WHAT EQUIPMENT DO YOU HAVE?</div>
         <div style={styles.subtitle}>
@@ -87,7 +87,7 @@ export default function EquipmentScreen() {
 
 const styles = {
   screen: {
-    background: 'linear-gradient(165deg, #0D0D14 0%, #141522 50%, #0D0D14 100%)',
+    background: 'linear-gradient(165deg, #080D2E 0%, #0D1545 50%, #080D2E 100%)',
     minHeight: '100%',
     padding: '16px 0 40px',
     position: 'relative',

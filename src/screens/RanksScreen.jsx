@@ -160,7 +160,7 @@ export default function RanksScreen() {
         <div style={{ textAlign: 'center', padding: '40px 20px' }}>
           <div style={{ fontSize: 32, marginBottom: 12 }}>{'👥'}</div>
           <div style={{ fontSize: 14, color: '#9AA0B8' }}>
-            No friends yet. Share FitLock to compete with friends!
+            No friends yet. Share SweatNScroll to compete with friends!
           </div>
         </div>
       )}
@@ -170,7 +170,7 @@ export default function RanksScreen() {
 
 const styles = {
   screen: {
-    background: '#0D0D14',
+    background: '#080D2E',
     minHeight: '100%',
     padding: '16px 0 100px',
   },

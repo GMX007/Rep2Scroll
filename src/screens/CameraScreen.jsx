@@ -42,7 +42,7 @@ export default function CameraScreen({ exercise, onComplete, onSwitchExercise })
           setCameraReady(true);
         }
       } catch (err) {
-        console.error('[FitLock] Camera access denied:', err);
+        console.error('[SweatNScroll] Camera access denied:', err);
         setFormStatus({ level: 'red', message: 'Camera access denied — check browser settings' });
       }
     }
@@ -115,7 +115,7 @@ export default function CameraScreen({ exercise, onComplete, onSwitchExercise })
         }
       }
     } catch (err) {
-      console.error('[FitLock] Pose detection error:', err);
+      console.error('[SweatNScroll] Pose detection error:', err);
     }
 
     animFrameRef.current = requestAnimationFrame(detectLoop);
@@ -183,7 +183,7 @@ export default function CameraScreen({ exercise, onComplete, onSwitchExercise })
           <div style={styles.pauseContent}>
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-              <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, color: '#E8533A', letterSpacing: 2 }}>FITLOCK</div>
+              <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, color: '#E8533A', letterSpacing: 2 }}>SWEATNSCROLL</div>
               <div style={{ background: 'rgba(240,165,0,0.15)', border: '1px solid rgba(240,165,0,0.3)', borderRadius: 20, padding: '4px 10px', fontSize: 11, fontWeight: 600, color: '#F0A500', display: 'flex', alignItems: 'center', gap: 4 }}>
                 {'⚡'} GRINDER
               </div>

@@ -1,17 +1,17 @@
 /**
- * FitLock Design System Tokens
+ * SweatNScroll Design System Tokens
  * Matches the UI prototype exactly
  */
 
 export const colors = {
-  ink: '#0D0D14',
+  ink: '#080D2E',
   paper: '#F4F1EB',
   muscle: '#E8533A',
   muscleDark: '#C0392B',
   muscleGlow: 'rgba(232,83,58,0.35)',
   gold: '#F0A500',
-  steel: '#2A2D3E',
-  steelLight: '#3D4155',
+  steel: '#141850',
+  steelLight: '#1E2460',
   mist: '#9AA0B8',
   safe: '#2ECC71',
   warn: '#F39C12',
@@ -42,10 +42,10 @@ export const shadows = {
 
 export const gradients = {
   muscle: 'linear-gradient(135deg, #E8533A, #C0392B)',
-  earnBg: 'linear-gradient(165deg, #0D0D14 0%, #141522 50%, #0D0D14 100%)',
-  levelUpBg: 'radial-gradient(ellipse at 50% 30%, rgba(240,165,0,0.2) 0%, #0D0D14 60%)',
-  summaryBg: 'linear-gradient(170deg, #131320 0%, #0D0D14 100%)',
-  onboardBg: 'radial-gradient(ellipse at 50% 0%, rgba(232,83,58,0.12) 0%, #0D0D14 50%)',
+  earnBg: 'linear-gradient(165deg, #080D2E 0%, #0D1545 50%, #080D2E 100%)',
+  levelUpBg: 'radial-gradient(ellipse at 50% 30%, rgba(240,165,0,0.2) 0%, #080D2E 60%)',
+  summaryBg: 'linear-gradient(170deg, #0D1545 0%, #080D2E 100%)',
+  onboardBg: 'radial-gradient(ellipse at 50% 0%, rgba(232,83,58,0.15) 0%, #080D2E 50%)',
   barFill: 'linear-gradient(90deg, #E8533A, #F0A500)',
 };
 

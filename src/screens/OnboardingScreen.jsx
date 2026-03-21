@@ -48,13 +48,13 @@ export default function OnboardingScreen() {
         <div style={welcomeStyles.content}>
           {/* Logo */}
           <div style={welcomeStyles.logoIcon}>{'🔒'}</div>
-          <div style={welcomeStyles.logo}>FITLOCK</div>
+          <div style={welcomeStyles.logo}>SWEATNSCROLL</div>
           <div style={welcomeStyles.tagline}>Earn your scroll time.</div>
 
           {/* Description */}
           <div style={welcomeStyles.descCard}>
             <div style={welcomeStyles.descText}>
-              FitLock uses your camera and AI to verify real exercises. Complete a set, earn screen time. No cheating. No shortcuts.
+              SweatNScroll uses your camera and AI to verify real exercises. Complete a set, earn screen time. No cheating. No shortcuts.
             </div>
           </div>
 
@@ -137,7 +137,7 @@ export default function OnboardingScreen() {
 // ─── WELCOME SPLASH STYLES ───
 const welcomeStyles = {
   screen: {
-    background: '#0D0D14',
+    background: '#080D2E',
     minHeight: '100%',
     padding: '0',
     position: 'relative',
@@ -216,7 +216,7 @@ const welcomeStyles = {
 // ─── ONBOARDING STEPS STYLES ───
 const styles = {
   screen: {
-    background: 'radial-gradient(ellipse at 50% 0%, rgba(232,83,58,0.12) 0%, #0D0D14 50%)',
+    background: 'radial-gradient(ellipse at 50% 0%, rgba(232,83,58,0.15) 0%, #080D2E 50%)',
     minHeight: '100%',
     padding: '40px 0 100px',
   },

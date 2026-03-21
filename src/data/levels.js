@@ -1,5 +1,5 @@
 /**
- * FitLock Gamification Levels
+ * SweatNScroll Gamification Levels
  * Free tier: levels 1-3 only
  * Standard tier: levels 1-10
  */
@@ -83,7 +83,7 @@ export const levels = [
     emoji: '🌟',
     tier: 'standard',
     xpRequired: 12000,
-    lore: "Your body is a monument to what happens when someone refuses to quit. The version of you that started FitLock wouldn't recognize what you've become.",
+    lore: "Your body is a monument to what happens when someone refuses to quit. The version of you that started SweatNScroll wouldn't recognize what you've become.",
     unlocks: ['Immortal badge', 'Exclusive exercises'],
   },
   {

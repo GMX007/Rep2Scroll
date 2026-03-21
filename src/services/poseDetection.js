@@ -1,5 +1,5 @@
 /**
- * FitLock Pose Detection Service
+ * SweatNScroll Pose Detection Service
  * Uses TensorFlow.js MoveNet SinglePose Lightning for real-time exercise form verification.
  * All processing runs in the browser — no video data is ever sent to any server.
  */
@@ -51,10 +51,10 @@ export async function initPoseDetector() {
       }
     );
 
-    console.log('[FitLock] MoveNet detector initialized');
+    console.log('[SweatNScroll] MoveNet detector initialized');
     return detector;
   } catch (err) {
-    console.error('[FitLock] Failed to init MoveNet:', err);
+    console.error('[SweatNScroll] Failed to init MoveNet:', err);
     throw err;
   } finally {
     isLoading = false;

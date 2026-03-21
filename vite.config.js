@@ -9,11 +9,11 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icons/*.png'],
       manifest: {
-        name: 'FitLock',
-        short_name: 'FitLock',
+        name: 'SweatNScroll',
+        short_name: 'SweatNScroll',
         description: 'Earn your scroll time. Every session. No exceptions.',
         theme_color: '#E8533A',
-        background_color: '#0D0D14',
+        background_color: '#080D2E',
         display: 'standalone',
         orientation: 'portrait',
         icons: [

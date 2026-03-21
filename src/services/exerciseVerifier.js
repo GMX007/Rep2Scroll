@@ -1,5 +1,5 @@
 /**
- * FitLock Exercise Verifier
+ * SweatNScroll Exercise Verifier
  * Applies exercise-specific form rules to MoveNet keypoints.
  * Returns form status (green/amber/red) and rep counting.
  *

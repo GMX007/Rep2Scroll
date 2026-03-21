@@ -92,7 +92,7 @@ export default function ScrollingScreen({ onStop, minutes = 0 }) {
 
 const styles = {
   screen: {
-    background: '#0D0D14',
+    background: '#080D2E',
     minHeight: '100%',
     padding: '40px 0 100px',
     position: 'relative',

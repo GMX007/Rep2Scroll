@@ -66,7 +66,7 @@ export default function PricingScreen({ onClose }) {
         <div style={{ textAlign: 'center', padding: '60px 24px' }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>{'✅'}</div>
           <div style={styles.title}>You're on Standard</div>
-          <div style={styles.sub}>You have full access to everything FitLock offers.</div>
+          <div style={styles.sub}>You have full access to everything SweatNScroll offers.</div>
           <div style={{ marginTop: 24 }}>
             <Button onClick={onClose}>Back to Settings</Button>
           </div>
@@ -81,7 +81,7 @@ export default function PricingScreen({ onClose }) {
 
       {/* Header */}
       <div style={styles.header}>
-        <div style={styles.logo}>FITLOCK</div>
+        <div style={styles.logo}>SWEATNSCROLL</div>
         <div style={styles.tierLabel}>STANDARD</div>
         <div style={styles.title}>Unlock Everything</div>
         <div style={styles.sub}>68 exercises. Full AI coaching. All 10 levels.</div>
@@ -146,7 +146,7 @@ export default function PricingScreen({ onClose }) {
 
 const styles = {
   screen: {
-    background: 'linear-gradient(180deg, #111122 0%, #0D0D14 100%)',
+    background: 'linear-gradient(180deg, #0D1545 0%, #080D2E 100%)',
     minHeight: '100%',
     padding: '16px 0 40px',
     position: 'relative',

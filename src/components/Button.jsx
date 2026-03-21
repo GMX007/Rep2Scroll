@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 
 /**
- * FitLock button — primary (orange) or secondary (ghost).
+ * SweatNScroll button — primary (orange) or secondary (ghost).
  */
 export default function Button({ children, variant = 'primary', onClick, style = {}, disabled = false }) {
   const [hover, setHover] = useState(false);
@@ -9,8 +9,8 @@ export default function Button({ children, variant = 'primary', onClick, style =
   const base = {
     margin: '0 20px',
     border: 'none',
-    borderRadius: 16,
-    padding: 18,
+    borderRadius: 28,
+    padding: '16px 20px',
     fontFamily: "'DM Sans', sans-serif",
     fontSize: 15,
     fontWeight: 700,

@@ -99,7 +99,7 @@ export default function SettingsScreen() {
       <div style={styles.honorCard}>
         <div style={{ fontSize: 20, marginBottom: 8 }}>{'🎯'}</div>
         <div style={{ fontSize: 13, color: 'rgba(244,241,235,0.8)', lineHeight: 1.6, textAlign: 'center' }}>
-          FitLock works on the honor system — the discipline is yours. That's the point.
+          SweatNScroll works on the honor system — the discipline is yours. That's the point.
         </div>
       </div>
 
@@ -135,7 +135,7 @@ export default function SettingsScreen() {
 
 const styles = {
   screen: {
-    background: '#0D0D14',
+    background: '#080D2E',
     minHeight: '100%',
     padding: '16px 0 100px',
   },

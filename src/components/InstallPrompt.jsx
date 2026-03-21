@@ -3,7 +3,7 @@ import Button from './Button';
 
 /**
  * PWA Install Banner — shows after the user completes their first exercise session.
- * "Add FitLock to your home screen for the full experience"
+ * "Add SweatNScroll to your home screen for the full experience"
  * Never shows again if dismissed twice.
  */
 export default function InstallPrompt() {
@@ -13,7 +13,7 @@ export default function InstallPrompt() {
 
   useEffect(() => {
     // Check how many times user has dismissed
-    const dismissCount = parseInt(localStorage.getItem('fitlock_install_dismiss') || '0', 10);
+    const dismissCount = parseInt(localStorage.getItem('sweatnscroll_install_dismiss') || '0', 10);
     if (dismissCount >= 2) {
       setDismissed(true);
       return;
@@ -63,8 +63,8 @@ export default function InstallPrompt() {
   };
 
   const handleDismiss = () => {
-    const current = parseInt(localStorage.getItem('fitlock_install_dismiss') || '0', 10);
-    localStorage.setItem('fitlock_install_dismiss', String(current + 1));
+    const current = parseInt(localStorage.getItem('sweatnscroll_install_dismiss') || '0', 10);
+    localStorage.setItem('sweatnscroll_install_dismiss', String(current + 1));
     setShowBanner(false);
     if (current + 1 >= 2) setDismissed(true);
   };
@@ -75,7 +75,7 @@ export default function InstallPrompt() {
     <div style={styles.banner}>
       <div style={styles.icon}>{'📲'}</div>
       <div style={styles.text}>
-        <div style={styles.title}>Add FitLock to your home screen</div>
+        <div style={styles.title}>Add SweatNScroll to your home screen</div>
         <div style={styles.sub}>Get the full experience with quick access</div>
       </div>
       <div style={styles.actions}>

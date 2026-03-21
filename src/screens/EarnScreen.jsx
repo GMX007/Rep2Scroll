@@ -28,7 +28,7 @@ export default function EarnScreen() {
 
       {/* Header */}
       <div style={styles.header}>
-        <span style={styles.logo}>FITLOCK</span>
+        <span style={styles.logo}>SWEATNSCROLL</span>
         <LevelBadge level={level} />
       </div>
 
@@ -95,7 +95,7 @@ export default function EarnScreen() {
 
 const styles = {
   screen: {
-    background: 'linear-gradient(165deg, #0D0D14 0%, #141522 50%, #0D0D14 100%)',
+    background: 'linear-gradient(165deg, #080D2E 0%, #0D1545 50%, #080D2E 100%)',
     minHeight: '100%',
     padding: '16px 0 100px',
     position: 'relative',

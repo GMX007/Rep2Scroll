@@ -48,7 +48,7 @@ const styles = {
     width: '100%',
     maxWidth: 430,
     height: 72,
-    background: 'rgba(17,17,24,0.95)',
+    background: 'rgba(8,13,46,0.95)',
     backdropFilter: 'blur(20px)',
     WebkitBackdropFilter: 'blur(20px)',
     borderTop: '1px solid rgba(255,255,255,0.07)',
@@ -72,7 +72,7 @@ const styles = {
     WebkitTapHighlightColor: 'transparent',
   },
   active: {
-    background: 'rgba(232,83,58,0.12)',
+    background: 'rgba(232,83,58,0.15)',
   },
   icon: {
     fontSize: 20,
