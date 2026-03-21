@@ -58,7 +58,7 @@ export default function LevelUpScreen() {
 
 const styles = {
   screen: {
-    background: 'radial-gradient(ellipse at 50% 30%, rgba(240,165,0,0.2) 0%, #080D2E 60%)',
+    background: 'radial-gradient(ellipse at 50% 30%, rgba(240,165,0,0.2) 0%, #0F1647 60%)',
     minHeight: '100%',
     padding: '40px 24px 100px',
     textAlign: 'center',

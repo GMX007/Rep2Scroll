@@ -13,7 +13,7 @@ export default defineConfig({
         short_name: 'SweatNScroll',
         description: 'Earn your scroll time. Every session. No exceptions.',
         theme_color: '#E8533A',
-        background_color: '#080D2E',
+        background_color: '#0F1647',
         display: 'standalone',
         orientation: 'portrait',
         icons: [

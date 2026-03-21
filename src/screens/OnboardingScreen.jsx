@@ -5,40 +5,40 @@ import { AppContext } from '../AppContext';
 
 const steps = [
   {
-    question: 'Choose your avatar',
-    subtitle: 'Your avatar gets fitter as you level up!',
+    question: 'Pick your look! ✨',
+    subtitle: 'Watch your avatar glow up as you level up!',
     options: [
       { emoji: '🙋‍♂️', text: 'Male' },
       { emoji: '🙋‍♀️', text: 'Female' },
     ],
   },
   {
-    question: "What's your main goal?",
-    subtitle: 'This helps us customize your experience',
+    question: "What brings you here? 💭",
+    subtitle: 'No wrong answers — we just wanna know you!',
     options: [
-      { emoji: '📱', text: 'Reduce screen time' },
-      { emoji: '💪', text: 'Build a workout habit' },
-      { emoji: '⚖️', text: 'Both equally' },
+      { emoji: '📱', text: 'Less doomscrolling' },
+      { emoji: '💪', text: 'Build a sweat habit' },
+      { emoji: '⚖️', text: 'Both, honestly!' },
     ],
   },
   {
-    question: 'How active are you right now?',
-    subtitle: 'This helps us set the right starting level for you',
+    question: 'How active are you rn? 🤔',
+    subtitle: "Be honest — we won't judge (much)",
     options: [
-      { emoji: '🛋️', text: 'Rarely or never exercise' },
-      { emoji: '🚶', text: 'Light activity 1-2 days/week' },
-      { emoji: '🏃', text: 'Moderate activity 3-4 days/week' },
-      { emoji: '⚡', text: 'Active 5+ days/week' },
+      { emoji: '🛋️', text: 'Total couch potato' },
+      { emoji: '🚶', text: 'Moving 1-2 days/week' },
+      { emoji: '🏃', text: 'Solid 3-4 days/week' },
+      { emoji: '⚡', text: 'Beast mode 5+ days' },
     ],
   },
   {
-    question: 'How much daily scroll time do you want to earn?',
-    subtitle: "You'll need to exercise to unlock each minute",
+    question: 'How much scroll time to earn? 📱',
+    subtitle: "Gotta sweat for every minute!",
     options: [
       { emoji: '⏰', text: '15 minutes' },
       { emoji: '⏱️', text: '30 minutes' },
       { emoji: '🕐', text: '45 minutes' },
-      { emoji: '🕒', text: '60 minutes (max)' },
+      { emoji: '🕒', text: '60 minutes (the max!)' },
     ],
   },
 ];
@@ -56,27 +56,27 @@ export default function OnboardingScreen() {
         <div style={welcomeStyles.glow} />
         <div style={welcomeStyles.content}>
           {/* Logo */}
-          <div style={welcomeStyles.logoIcon}>{'🔒'}</div>
+          <div style={welcomeStyles.logoIcon}>{'💪'}</div>
           <div style={welcomeStyles.logo}>SWEATNSCROLL</div>
-          <div style={welcomeStyles.tagline}>Earn your scroll time.</div>
+          <div style={welcomeStyles.tagline}>Sweat first. Scroll later. ✨</div>
 
           {/* Description */}
           <div style={welcomeStyles.descCard}>
             <div style={welcomeStyles.descText}>
-              SweatNScroll uses your camera and AI to verify real exercises. Complete a set, earn screen time. No cheating. No shortcuts.
+              Do a quick workout, earn your phone time. Our AI checks your form so you can't fake it — but you totally got this! 💪
             </div>
           </div>
 
           {/* Feature pills */}
           <div style={welcomeStyles.features}>
-            <div style={welcomeStyles.featurePill}>{'📷'} AI form verification</div>
-            <div style={welcomeStyles.featurePill}>{'🔥'} Streak tracking</div>
+            <div style={welcomeStyles.featurePill}>{'📷'} AI form checks</div>
+            <div style={welcomeStyles.featurePill}>{'🔥'} Streaks</div>
             <div style={welcomeStyles.featurePill}>{'🏆'} Leaderboards</div>
             <div style={welcomeStyles.featurePill}>{'⏱️'} Earn scroll time</div>
           </div>
 
           <Button onClick={() => setShowWelcome(false)}>
-            Get Started →
+            Let's Go! ✨
           </Button>
         </div>
       </div>
@@ -157,7 +157,7 @@ export default function OnboardingScreen() {
 // ─── WELCOME SPLASH STYLES ───
 const welcomeStyles = {
   screen: {
-    background: '#080D2E',
+    background: '#0F1647',
     minHeight: '100%',
     padding: '0',
     position: 'relative',
@@ -203,7 +203,7 @@ const welcomeStyles = {
   descCard: {
     background: 'rgba(255,255,255,0.04)',
     border: '1px solid rgba(255,255,255,0.08)',
-    borderRadius: 16,
+    borderRadius: 24,
     padding: '18px 20px',
     marginBottom: 24,
     textAlign: 'center',
@@ -223,7 +223,7 @@ const welcomeStyles = {
   featurePill: {
     background: 'rgba(232,83,58,0.08)',
     border: '1px solid rgba(232,83,58,0.2)',
-    borderRadius: 20,
+    borderRadius: 24,
     padding: '6px 14px',
     fontSize: 12,
     color: '#F4F1EB',
@@ -236,7 +236,7 @@ const welcomeStyles = {
 // ─── ONBOARDING STEPS STYLES ───
 const styles = {
   screen: {
-    background: 'radial-gradient(ellipse at 50% 0%, rgba(232,83,58,0.15) 0%, #080D2E 50%)',
+    background: 'radial-gradient(ellipse at 50% 0%, rgba(232,83,58,0.15) 0%, #0F1647 50%)',
     minHeight: '100%',
     padding: '40px 0 100px',
   },
@@ -262,7 +262,7 @@ const styles = {
     gap: 14,
     background: 'rgba(255,255,255,0.04)',
     border: '1px solid rgba(255,255,255,0.08)',
-    borderRadius: 14,
+    borderRadius: 20,
     padding: '14px 16px',
     marginBottom: 10,
     cursor: 'pointer',

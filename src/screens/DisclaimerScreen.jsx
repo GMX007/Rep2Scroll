@@ -56,7 +56,7 @@ export default function DisclaimerScreen() {
 
 const styles = {
   screen: {
-    background: 'linear-gradient(180deg, #0A1034 0%, #080D2E 100%)',
+    background: 'linear-gradient(180deg, #0A1034 0%, #0F1647 100%)',
     minHeight: '100%',
     padding: '40px 0 100px',
   },

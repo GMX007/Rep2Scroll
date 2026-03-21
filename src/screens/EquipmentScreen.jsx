@@ -87,7 +87,7 @@ export default function EquipmentScreen() {
 
 const styles = {
   screen: {
-    background: 'linear-gradient(165deg, #080D2E 0%, #0D1545 50%, #080D2E 100%)',
+    background: 'linear-gradient(165deg, #0F1647 0%, #152058 50%, #0F1647 100%)',
     minHeight: '100%',
     padding: '16px 0 40px',
     position: 'relative',

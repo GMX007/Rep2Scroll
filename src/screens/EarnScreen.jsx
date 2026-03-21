@@ -34,7 +34,7 @@ export default function EarnScreen() {
 
       {/* Effort Bar */}
       <div style={styles.barContainer}>
-        <div style={styles.barLabel}>Scroll Time Earned</div>
+        <div style={styles.barLabel}>Scroll Time Earned {'🎉'}</div>
         <EffortBar progress={progress} minutes={Math.floor(earnedMinutes)} />
       </div>
 
@@ -54,13 +54,13 @@ export default function EarnScreen() {
       {earnedMinutes > 0 ? (
         <div style={{ marginTop: 18 }}>
           <Button onClick={handleStartScrolling}>
-            Start Scrolling {'→'}
+            Time to Scroll! {'✨'}
           </Button>
         </div>
       ) : (
         <div style={{ marginTop: 18 }}>
           <Button onClick={handleStartExercise}>
-            Start Exercise
+            Let's Sweat! {'💪'}
           </Button>
         </div>
       )}
@@ -95,7 +95,7 @@ export default function EarnScreen() {
 
 const styles = {
   screen: {
-    background: 'linear-gradient(165deg, #080D2E 0%, #0D1545 50%, #080D2E 100%)',
+    background: 'linear-gradient(165deg, #0F1647 0%, #152058 50%, #0F1647 100%)',
     minHeight: '100%',
     padding: '16px 0 100px',
     position: 'relative',

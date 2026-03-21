@@ -99,7 +99,7 @@ export default function SummaryScreen() {
 
 const styles = {
   screen: {
-    background: 'linear-gradient(170deg, #0D1545 0%, #080D2E 100%)',
+    background: 'linear-gradient(170deg, #152058 0%, #0F1647 100%)',
     minHeight: '100%',
     padding: '16px 0 100px',
   },

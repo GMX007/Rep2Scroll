@@ -170,7 +170,7 @@ export default function RanksScreen() {
 
 const styles = {
   screen: {
-    background: '#080D2E',
+    background: '#0F1647',
     minHeight: '100%',
     padding: '16px 0 100px',
   },
