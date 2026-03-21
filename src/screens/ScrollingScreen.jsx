@@ -1,34 +1,46 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Button from '../components/Button';
 
 /**
  * Shown while the user is "scrolling" — using their earned screen time.
- * Displays a countdown timer and a button to go back to exercising.
+ * Timer uses wall-clock time (Date.now) so it keeps counting even when
+ * the user switches to another app or the browser tab is backgrounded.
  */
 export default function ScrollingScreen({ onStop, minutes = 0 }) {
   const totalSeconds = Math.floor(minutes * 60);
+
+  // Store the absolute end time so backgrounding doesn't pause the timer
+  const endTimeRef = useRef(Date.now() + totalSeconds * 1000);
   const [remaining, setRemaining] = useState(totalSeconds);
 
   useEffect(() => {
-    if (remaining <= 0) {
-      onStop?.();
-      return;
-    }
-    const timer = setInterval(() => {
-      setRemaining(prev => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          onStop?.();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
+    const tick = () => {
+      const secondsLeft = Math.max(0, Math.round((endTimeRef.current - Date.now()) / 1000));
+      setRemaining(secondsLeft);
+      if (secondsLeft <= 0) {
+        onStop?.();
+      }
+    };
+
+    // Tick immediately on mount and when tab becomes visible again
+    tick();
+    const interval = setInterval(tick, 1000);
+
+    // Page Visibility API — recalculate when user comes back to the app
+    const handleVisibilityChange = () => {
+      if (!document.hidden) tick();
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
 
   const mins = Math.floor(remaining / 60);
   const secs = remaining % 60;
+  const progress = totalSeconds > 0 ? remaining / totalSeconds : 0;
 
   return (
     <div style={styles.screen}>
@@ -54,7 +66,7 @@ export default function ScrollingScreen({ onStop, minutes = 0 }) {
               strokeWidth="6"
               strokeLinecap="round"
               strokeDasharray={2 * Math.PI * 70}
-              strokeDashoffset={2 * Math.PI * 70 * (1 - remaining / totalSeconds)}
+              strokeDashoffset={2 * Math.PI * 70 * (1 - progress)}
               transform="rotate(-90 80 80)"
               style={{ transition: 'stroke-dashoffset 1s linear' }}
             />

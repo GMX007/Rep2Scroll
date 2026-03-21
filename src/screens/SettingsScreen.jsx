@@ -1,8 +1,18 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import { AppContext } from '../AppContext';
 
 export default function SettingsScreen() {
   const { state, dispatch } = useContext(AppContext);
+  const [confirmReset, setConfirmReset] = useState(false);
+
+  const handleReset = () => {
+    if (!confirmReset) {
+      setConfirmReset(true);
+      return;
+    }
+    localStorage.clear();
+    window.location.reload();
+  };
 
   const SettingRow = ({ label, value, onClick }) => (
     <div style={styles.row} onClick={onClick}>
@@ -100,6 +110,25 @@ export default function SettingsScreen() {
         <SettingRow label="Privacy Policy" value="" onClick={() => dispatch({ type: 'SHOW_LEGAL', payload: 'privacy' })} />
         <SettingRow label="Terms of Service" value="" onClick={() => dispatch({ type: 'SHOW_LEGAL', payload: 'terms' })} />
       </div>
+
+      {/* Reset */}
+      <div style={styles.sectionLabel}>Danger Zone</div>
+      <button
+        onClick={handleReset}
+        style={{
+          ...styles.resetBtn,
+          background: confirmReset ? 'rgba(231,76,60,0.15)' : 'rgba(255,255,255,0.04)',
+          borderColor: confirmReset ? 'rgba(231,76,60,0.5)' : 'rgba(255,255,255,0.08)',
+          color: confirmReset ? '#E74C3C' : '#9AA0B8',
+        }}
+      >
+        {confirmReset ? '⚠️ Tap again to confirm — this cannot be undone' : '🔄 Reset App & Start Over'}
+      </button>
+      {confirmReset && (
+        <button onClick={() => setConfirmReset(false)} style={styles.cancelBtn}>
+          Cancel
+        </button>
+      )}
     </div>
   );
 }
@@ -147,6 +176,30 @@ const styles = {
   rowValue: {
     fontSize: 13,
     color: '#9AA0B8',
+  },
+  resetBtn: {
+    display: 'block',
+    width: 'calc(100% - 40px)',
+    margin: '0 20px',
+    padding: '14px 16px',
+    border: '1px solid',
+    borderRadius: 16,
+    fontSize: 14,
+    cursor: 'pointer',
+    fontFamily: "'DM Sans', sans-serif",
+    textAlign: 'left',
+    transition: 'all 0.2s',
+  },
+  cancelBtn: {
+    display: 'block',
+    margin: '10px auto',
+    background: 'transparent',
+    border: 'none',
+    color: '#9AA0B8',
+    fontSize: 13,
+    cursor: 'pointer',
+    fontFamily: "'DM Sans', sans-serif",
+    textDecoration: 'underline',
   },
   honorCard: {
     margin: '20px 20px',
