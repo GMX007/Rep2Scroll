@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState, useContext, useCallback } from 'rea
 import { AppContext } from '../AppContext';
 import { initPoseDetector, estimatePose } from '../services/poseDetection';
 import { verifyExercise, resetRepState } from '../services/exerciseVerifier';
+import { playRepComplete, playSetComplete, playFormWarning, playFormBreak } from '../services/audioService';
 import FormIndicator from '../components/FormIndicator';
 import Button from '../components/Button';
 
@@ -22,6 +23,8 @@ export default function CameraScreen({ exercise, onComplete, onSwitchExercise })
   const [holdTime, setHoldTime] = useState(0);
   const [formStatus, setFormStatus] = useState({ level: 'green', message: 'Get ready...' });
   const [paused, setPaused] = useState(false);
+  const [muted, setMuted] = useState(!state.settings?.audioEnabled);
+  const lastFormLevel = useRef('green');
 
   const isHold = exercise?.type === 'hold';
   const target = exercise?.defaultTarget || 14;
@@ -82,12 +85,20 @@ export default function CameraScreen({ exercise, onComplete, onSwitchExercise })
 
         if (result.level === 'pause') {
           setPaused(true);
+          if (!muted) playFormBreak();
         }
+
+        // Audio cue for form warnings (only on transition to amber/red)
+        if (!muted && result.level === 'red' && lastFormLevel.current !== 'red') {
+          playFormWarning();
+        }
+        lastFormLevel.current = result.level;
 
         if (isHold && result.holdValid) {
           setHoldTime(prev => {
             const newTime = prev + (1 / 10); // ~10 fps effective rate
             if (newTime >= target) {
+              if (!muted) playSetComplete();
               onComplete?.({ holdTime: target, formScore: 100 });
             }
             return newTime;
@@ -98,7 +109,10 @@ export default function CameraScreen({ exercise, onComplete, onSwitchExercise })
           setReps(prev => {
             const newReps = prev + 1;
             if (newReps >= target) {
+              if (!muted) playSetComplete();
               onComplete?.({ reps: target, formScore: result.effortScore * 100 });
+            } else {
+              if (!muted) playRepComplete();
             }
             return newReps;
           });
@@ -119,7 +133,7 @@ export default function CameraScreen({ exercise, onComplete, onSwitchExercise })
     }
 
     animFrameRef.current = requestAnimationFrame(detectLoop);
-  }, [cameraReady, modelReady, paused, exercise, isHold, target, onComplete, state.settings]);
+  }, [cameraReady, modelReady, paused, exercise, isHold, target, onComplete, state.settings, muted]);
 
   useEffect(() => {
     animFrameRef.current = requestAnimationFrame(detectLoop);
@@ -240,6 +254,14 @@ export default function CameraScreen({ exercise, onComplete, onSwitchExercise })
         </div>
       )}
 
+      {/* Mute toggle button */}
+      <button
+        onClick={() => setMuted(m => !m)}
+        style={styles.muteBtn}
+      >
+        {muted ? '🔇' : '🔊'}
+      </button>
+
       {/* End session button */}
       <button onClick={() => onComplete?.({ reps, holdTime, formScore: 80 })} style={styles.endBtn}>
         End Session
@@ -320,6 +342,19 @@ const styles = {
     fontSize: 12,
     color: '#F0A500',
     marginTop: 8,
+  },
+  muteBtn: {
+    position: 'absolute',
+    top: 20,
+    left: 20,
+    background: 'rgba(0,0,0,0.5)',
+    border: '1px solid rgba(255,255,255,0.2)',
+    borderRadius: 20,
+    padding: '8px 12px',
+    color: '#F4F1EB',
+    fontSize: 16,
+    cursor: 'pointer',
+    zIndex: 10,
   },
   endBtn: {
     position: 'absolute',

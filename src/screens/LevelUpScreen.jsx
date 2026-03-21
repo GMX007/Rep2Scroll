@@ -1,12 +1,20 @@
-import React, { useContext } from 'react';
+import React, { useContext, useEffect } from 'react';
 import Button from '../components/Button';
 import LevelAvatar from '../components/LevelAvatar';
 import { AppContext } from '../AppContext';
 import { getLevelForXP } from '../data/levels';
+import { playLevelUp } from '../services/audioService';
 
 export default function LevelUpScreen() {
   const { state, dispatch } = useContext(AppContext);
   const level = getLevelForXP(state.xp);
+
+  // Play level up fanfare on mount
+  useEffect(() => {
+    if (state.settings?.audioEnabled) {
+      playLevelUp();
+    }
+  }, []);
 
   return (
     <div style={styles.screen}>

@@ -51,7 +51,7 @@ function checkFormBreak(result) {
   }
   const breakDuration = (now - repState.formBreakStart) / 1000;
 
-  if (breakDuration > 3) {
+  if (breakDuration > 5) {
     return {
       ...result,
       level: 'pause',
@@ -129,27 +129,27 @@ function verifyPushUpFamily(pose, { downAngle = 95, upAngle = 160, hipTolerance 
 }
 
 export function verifyPushUp(pose) {
-  return verifyPushUpFamily(pose, { downAngle: 95, upAngle: 160, hipTolerance: 15 });
+  return verifyPushUpFamily(pose, { downAngle: 80, upAngle: 145, hipTolerance: 25 });
 }
 
 export function verifyKneePushUp(pose) {
-  return verifyPushUpFamily(pose, { downAngle: 95, upAngle: 160, hipTolerance: 15, useKnee: true });
+  return verifyPushUpFamily(pose, { downAngle: 80, upAngle: 145, hipTolerance: 25, useKnee: true });
 }
 
 export function verifyWidePushUp(pose) {
-  return verifyPushUpFamily(pose, { downAngle: 95, upAngle: 160, hipTolerance: 15 });
+  return verifyPushUpFamily(pose, { downAngle: 80, upAngle: 145, hipTolerance: 25 });
 }
 
 export function verifyDiamondPushUp(pose) {
-  return verifyPushUpFamily(pose, { downAngle: 95, upAngle: 160, hipTolerance: 15 });
+  return verifyPushUpFamily(pose, { downAngle: 85, upAngle: 145, hipTolerance: 25 });
 }
 
 export function verifyDeclinePushUp(pose) {
-  return verifyPushUpFamily(pose, { downAngle: 95, upAngle: 160, hipTolerance: 15 });
+  return verifyPushUpFamily(pose, { downAngle: 80, upAngle: 145, hipTolerance: 25 });
 }
 
 export function verifyPikePushUp(pose) {
-  return verifyPushUpFamily(pose, { downAngle: 100, upAngle: 170, hipTolerance: 20, pikeMode: true });
+  return verifyPushUpFamily(pose, { downAngle: 90, upAngle: 155, hipTolerance: 30, pikeMode: true });
 }
 
 // ─────────────────────────────────────────────
@@ -168,19 +168,19 @@ export function verifySquat(pose) {
   const torsoAngle = calculateAngle({ x: shoulder.x, y: shoulder.y - 100 }, shoulder, hip);
 
   let repCompleted = false;
-  if (kneeAngle < 100 && repState.phase === 'up') {
+  if (kneeAngle < 115 && repState.phase === 'up') {
     repState.phase = 'down';
   }
-  if (kneeAngle > 165 && repState.phase === 'down') {
+  if (kneeAngle > 150 && repState.phase === 'down') {
     repState.phase = 'up';
     repCompleted = true;
   }
 
-  if (kneeAngle > 110 && repState.phase === 'down') {
+  if (kneeAngle > 125 && repState.phase === 'down') {
     return { level: 'amber', message: 'Go deeper — thighs parallel', repCompleted: false, effortScore: 0.8 };
   }
 
-  if (torsoAngle > 45) {
+  if (torsoAngle > 50) {
     return checkFormBreak({ level: 'red', message: "Chest up — don't lean forward", repCompleted: false, effortScore: 0 });
   }
 
@@ -204,16 +204,16 @@ export function verifyLunge(pose) {
   const torsoDeviation = calculateAlignment({ x: shoulder.x, y: shoulder.y - 50 }, shoulder, hip);
 
   let repCompleted = false;
-  if (kneeAngle < 100 && repState.phase === 'up') {
+  if (kneeAngle < 115 && repState.phase === 'up') {
     repState.phase = 'down';
   }
-  if (kneeAngle > 160 && repState.phase === 'down') {
+  if (kneeAngle > 150 && repState.phase === 'down') {
     repState.phase = 'up';
     repCompleted = true;
   }
 
   // Knee going past toes check (approximate: knee.x far ahead of ankle.x)
-  if (Math.abs(knee.x - ankle.x) > 60) {
+  if (Math.abs(knee.x - ankle.x) > 80) {
     return checkFormBreak({ level: 'red', message: 'Knee over toes — step wider', repCompleted: false, effortScore: 0 });
   }
 

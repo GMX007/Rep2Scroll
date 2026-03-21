@@ -74,6 +74,18 @@ export default function EarnScreen() {
         </div>
       )}
 
+      {/* Upgrade button for free tier */}
+      {state.tier === 'free' && (
+        <div style={{ marginTop: 10 }}>
+          <button
+            onClick={() => dispatch({ type: 'SHOW_PRICING' })}
+            style={styles.upgradeBtn}
+          >
+            {'✨'} Unlock All Exercises & Levels
+          </button>
+        </div>
+      )}
+
       {/* Mini Stats */}
       <div style={styles.miniStats}>
         <div style={styles.miniStat}>
@@ -167,5 +179,22 @@ const styles = {
     textTransform: 'uppercase',
     letterSpacing: 1,
     marginTop: 3,
+  },
+  upgradeBtn: {
+    width: '100%',
+    padding: '14px 20px',
+    background: 'linear-gradient(135deg, rgba(240,165,0,0.15), rgba(232,83,58,0.15))',
+    border: '1px solid rgba(240,165,0,0.3)',
+    borderRadius: 28,
+    color: '#F0A500',
+    fontSize: 14,
+    fontWeight: 700,
+    cursor: 'pointer',
+    fontFamily: "'DM Sans', sans-serif",
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    transition: 'all 0.2s',
   },
 };

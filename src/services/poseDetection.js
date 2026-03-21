@@ -82,7 +82,7 @@ export function getKeypoint(pose, name) {
   const idx = KEYPOINT_MAP[name];
   if (idx === undefined || !pose?.keypoints?.[idx]) return null;
   const kp = pose.keypoints[idx];
-  return kp.score > 0.3 ? kp : null; // minimum confidence threshold
+  return kp.score > 0.2 ? kp : null; // minimum confidence threshold (loosened for varied lighting)
 }
 
 /**
