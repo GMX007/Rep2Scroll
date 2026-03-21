@@ -1,42 +1,33 @@
 import React, { useState, useEffect } from 'react';
 
 /**
- * PWA Install Banner — shows right after onboarding completes.
- * Orange install button with blue sweatdrop icon.
- * Never shows again if dismissed twice.
+ * PWA Install Banner — shows right after onboarding.
+ * Gives platform-specific instructions for adding to home screen.
  */
 export default function InstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [showBanner, setShowBanner] = useState(false);
   const [dismissed, setDismissed] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
 
   useEffect(() => {
     const dismissCount = parseInt(localStorage.getItem('sweatnscroll_install_dismiss') || '0', 10);
-    if (dismissCount >= 2) {
-      setDismissed(true);
-      return;
-    }
+    if (dismissCount >= 2) { setDismissed(true); return; }
+    if (window.matchMedia('(display-mode: standalone)').matches) { setDismissed(true); return; }
 
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      setDismissed(true);
-      return;
-    }
+    const iosCheck = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    setIsIOS(iosCheck);
 
     const handler = (e) => {
       e.preventDefault();
       setDeferredPrompt(e);
       setShowBanner(true);
     };
-
     window.addEventListener('beforeinstallprompt', handler);
 
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-    if (isIOS && !navigator.standalone) {
+    if (iosCheck && !navigator.standalone) {
       const timer = setTimeout(() => setShowBanner(true), 2000);
-      return () => {
-        clearTimeout(timer);
-        window.removeEventListener('beforeinstallprompt', handler);
-      };
+      return () => { clearTimeout(timer); window.removeEventListener('beforeinstallprompt', handler); };
     }
 
     return () => window.removeEventListener('beforeinstallprompt', handler);
@@ -46,12 +37,8 @@ export default function InstallPrompt() {
     if (deferredPrompt) {
       deferredPrompt.prompt();
       const result = await deferredPrompt.userChoice;
-      if (result.outcome === 'accepted') {
-        setShowBanner(false);
-      }
+      if (result.outcome === 'accepted') setShowBanner(false);
       setDeferredPrompt(null);
-    } else {
-      alert('Tap the Share button in Safari, then tap "Add to Home Screen"');
     }
   };
 
@@ -64,31 +51,38 @@ export default function InstallPrompt() {
 
   if (!showBanner || dismissed) return null;
 
-  // Blue sweatdrop SVG icon
+  // Sweatdrop icon — proper teardrop shape
   const SweatDrop = () => (
-    <svg width="20" height="24" viewBox="0 0 20 24" style={{ marginRight: 6, verticalAlign: 'middle' }}>
+    <svg width="18" height="22" viewBox="0 0 18 22" style={{ marginRight: 8, flexShrink: 0 }}>
       <path
-        d="M10 0 C10 0 0 12 0 16 C0 20.4 4.5 24 10 24 C15.5 24 20 20.4 20 16 C20 12 10 0 10 0Z"
-        fill="#64B5F6"
+        d="M9 0 C9 0 0 10 0 14.5 C0 18.6 4 22 9 22 C14 22 18 18.6 18 14.5 C18 10 9 0 9 0Z"
+        fill="#4FC3F7"
       />
-      <ellipse cx="7" cy="15" rx="2.5" ry="3" fill="rgba(255,255,255,0.3)" />
+      <ellipse cx="6" cy="14" rx="2" ry="2.5" fill="rgba(255,255,255,0.35)" />
     </svg>
   );
 
   return (
     <div style={styles.banner}>
       <div style={styles.topRow}>
-        <div style={styles.iconWrap}>{'📱'}</div>
+        <SweatDrop />
         <div style={styles.text}>
-          <div style={styles.title}>Add to your home screen!</div>
-          <div style={styles.sub}>Quick access to your workouts ✨</div>
+          <div style={styles.title}>Add SweatNScroll to your phone!</div>
+          <div style={styles.sub}>
+            {isIOS
+              ? "Tap the Share button (the square with an arrow) at the bottom of Safari, then tap \"Add to Home Screen\""
+              : "Tap the \u22EE menu (3 dots) in the top right of your browser, then tap \"Add to Home Screen\" or \"Install App\""
+            }
+          </div>
         </div>
       </div>
       <div style={styles.actions}>
-        <button onClick={handleInstall} style={styles.installBtn}>
-          <SweatDrop /> Add to Home Screen
-        </button>
-        <button onClick={handleDismiss} style={styles.laterBtn}>Maybe later</button>
+        {deferredPrompt && (
+          <button onClick={handleInstall} style={styles.installBtn}>
+            Install Now
+          </button>
+        )}
+        <button onClick={handleDismiss} style={styles.laterBtn}>Got it!</button>
       </div>
     </div>
   );
@@ -102,79 +96,61 @@ const styles = {
     transform: 'translateX(-50%)',
     width: 'calc(100% - 32px)',
     maxWidth: 400,
-    background: '#1A2060',
-    border: '1px solid rgba(232,83,58,0.3)',
+    background: 'linear-gradient(135deg, #E8533A, #D4432A)',
     borderRadius: 24,
     padding: '18px 18px',
     display: 'flex',
     flexDirection: 'column',
     gap: 14,
     zIndex: 90,
-    boxShadow: '0 12px 40px rgba(0,0,0,0.6)',
+    boxShadow: '0 12px 40px rgba(232,83,58,0.4)',
     animation: 'slide-up 0.3s ease',
   },
   topRow: {
     display: 'flex',
-    alignItems: 'center',
-    gap: 12,
-  },
-  iconWrap: {
-    fontSize: 28,
-    width: 48,
-    height: 48,
-    borderRadius: 16,
-    background: 'rgba(232,83,58,0.1)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
+    alignItems: 'flex-start',
+    gap: 4,
   },
   text: {
     flex: 1,
   },
   title: {
-    fontSize: 15,
-    fontWeight: 700,
-    color: '#F4F1EB',
-    marginBottom: 2,
+    fontSize: 16,
+    fontWeight: 800,
+    color: 'white',
+    marginBottom: 6,
   },
   sub: {
-    fontSize: 12,
-    color: '#9AA0B8',
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.9)',
+    lineHeight: 1.5,
   },
   actions: {
     display: 'flex',
-    flexDirection: 'column',
     gap: 8,
   },
   installBtn: {
-    width: '100%',
-    background: 'linear-gradient(135deg, #E8533A, #D4432A)',
+    flex: 1,
+    background: 'white',
     border: 'none',
-    borderRadius: 20,
-    padding: '14px 20px',
-    color: 'white',
-    fontSize: 15,
+    borderRadius: 16,
+    padding: '12px 20px',
+    color: '#E8533A',
+    fontSize: 14,
     fontWeight: 700,
     cursor: 'pointer',
     fontFamily: "'DM Sans', sans-serif",
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    boxShadow: '0 6px 20px rgba(232,83,58,0.35)',
   },
   laterBtn: {
-    width: '100%',
-    background: 'transparent',
-    border: 'none',
+    flex: 1,
+    background: 'rgba(255,255,255,0.15)',
+    border: '1px solid rgba(255,255,255,0.3)',
     borderRadius: 16,
-    padding: '10px 16px',
-    color: '#9AA0B8',
-    fontSize: 13,
+    padding: '12px 20px',
+    color: 'white',
+    fontSize: 14,
     fontWeight: 600,
     cursor: 'pointer',
     fontFamily: "'DM Sans', sans-serif",
-    textDecoration: 'underline',
-    textUnderlineOffset: 3,
   },
 };

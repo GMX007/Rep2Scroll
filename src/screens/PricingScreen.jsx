@@ -34,7 +34,7 @@ const plans = [
 ];
 
 const standardFeatures = [
-  { emoji: '🏋️', text: 'Full library of 68+ exercises' },
+  { emoji: '🏋️', text: 'Full library of 45+ exercises' },
   { emoji: '🎯', text: 'Body area & equipment filters' },
   { emoji: '📈', text: 'Progressive overload tracking' },
   { emoji: '🔄', text: 'Form correction & variation suggestions' },

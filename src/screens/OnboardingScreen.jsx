@@ -131,9 +131,10 @@ export default function OnboardingScreen() {
         {step.options.map((option, i) => {
           const selected = selections[currentStep] === option.text;
           return (
-            <button key={i} onClick={() => handleSelect(option.text)} style={{
+            <button key={`${currentStep}-${i}`} onClick={() => handleSelect(option.text)} style={{
               ...styles.optionBtn,
-              ...(selected ? styles.optionSelected : {}),
+              background: selected ? 'rgba(232,83,58,0.12)' : 'rgba(255,255,255,0.04)',
+              borderColor: selected ? 'rgba(232,83,58,0.4)' : 'rgba(255,255,255,0.08)',
             }}>
               <span style={{ fontSize: 20 }}>{option.emoji}</span>
               <span style={styles.optionText}>{option.text}</span>
@@ -273,8 +274,7 @@ const styles = {
     transition: 'all 0.2s',
   },
   optionSelected: {
-    background: 'rgba(232,83,58,0.1)',
-    borderColor: 'rgba(232,83,58,0.4)',
+    /* now applied inline for reliable toggling */
   },
   optionText: {
     fontSize: 14,
