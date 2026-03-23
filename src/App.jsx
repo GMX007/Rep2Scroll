@@ -20,6 +20,7 @@ import ScrollingScreen from './screens/ScrollingScreen';
 import BodyPartScreen from './screens/BodyPartScreen';
 import ExercisePickerScreen from './screens/ExercisePickerScreen';
 import EquipmentScreen from './screens/EquipmentScreen';
+import ExerciseHowToScreen from './screens/ExerciseHowToScreen';
 
 function AppShell() {
   const { state, dispatch } = useContext(AppContext);
@@ -30,6 +31,16 @@ function AppShell() {
   }
   if (!state.disclaimerAccepted) {
     return <DisclaimerScreen />;
+  }
+
+  // How-to screen (shown before camera)
+  if (state.showHowTo) {
+    return (
+      <ExerciseHowToScreen
+        exercise={state.currentExercise}
+        onReady={() => dispatch({ type: 'DISMISS_HOW_TO' })}
+      />
+    );
   }
 
   // Camera overlay (shown over main app)

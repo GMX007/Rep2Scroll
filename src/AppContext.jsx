@@ -48,6 +48,7 @@ const initialState = {
   showLevelUp: false,
   showSummary: false,
   showCamera: false,
+  showHowTo: false,
   showPricing: false,
   showLegal: null, // null | 'privacy' | 'terms'
 
@@ -82,6 +83,7 @@ function loadState() {
         showLevelUp: false,
         showSummary: false,
         showCamera: false,
+        showHowTo: false,
         showPricing: false,
         showLegal: null,
       };
@@ -123,11 +125,15 @@ function reducer(state, action) {
         ...state,
         currentExercise: exercise,
         isExercising: true,
-        showCamera: true,
+        showHowTo: true,
+        showCamera: false,
         repsCompleted: 0,
         formStatus: { level: 'green', message: 'Get ready...' },
       };
     }
+
+    case 'DISMISS_HOW_TO':
+      return { ...state, showHowTo: false, showCamera: true };
 
     case 'COMPLETE_EXERCISE': {
       const { reps = 0, holdTime = 0, formScore = 100 } = action.payload;

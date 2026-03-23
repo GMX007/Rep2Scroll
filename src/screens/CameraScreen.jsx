@@ -345,7 +345,7 @@ const styles = {
   },
   muteBtn: {
     position: 'absolute',
-    top: 20,
+    top: 48,
     left: 20,
     background: 'rgba(0,0,0,0.5)',
     border: '1px solid rgba(255,255,255,0.2)',
@@ -358,7 +358,7 @@ const styles = {
   },
   endBtn: {
     position: 'absolute',
-    top: 20,
+    top: 48,
     right: 20,
     background: 'rgba(0,0,0,0.5)',
     border: '1px solid rgba(255,255,255,0.2)',
