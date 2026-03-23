@@ -6,12 +6,13 @@ import Button from '../components/Button';
  * Timer uses wall-clock time (Date.now) so it keeps counting even when
  * the user switches to another app or the browser tab is backgrounded.
  */
-export default function ScrollingScreen({ onStop, minutes = 0 }) {
+export default function ScrollingScreen({ onStop, minutes = 0, scrollEndTime = null }) {
   const totalSeconds = Math.floor(minutes * 60);
 
-  // Store the absolute end time so backgrounding doesn't pause the timer
-  const endTimeRef = useRef(Date.now() + totalSeconds * 1000);
-  const [remaining, setRemaining] = useState(totalSeconds);
+  // Use persisted end time if available (survives app restarts), otherwise compute fresh
+  const endTimeRef = useRef(scrollEndTime || Date.now() + totalSeconds * 1000);
+  const computedRemaining = Math.max(0, Math.round((endTimeRef.current - Date.now()) / 1000));
+  const [remaining, setRemaining] = useState(computedRemaining);
 
   useEffect(() => {
     const tick = () => {
@@ -40,7 +41,9 @@ export default function ScrollingScreen({ onStop, minutes = 0 }) {
 
   const mins = Math.floor(remaining / 60);
   const secs = remaining % 60;
-  const progress = totalSeconds > 0 ? remaining / totalSeconds : 0;
+  // Calculate original duration from end time for accurate progress ring
+  const originalDuration = totalSeconds > 0 ? totalSeconds : Math.max(1, Math.round((endTimeRef.current - (Date.now() - remaining * 1000)) / 1000));
+  const progress = originalDuration > 0 ? remaining / originalDuration : 0;
 
   return (
     <div style={styles.screen}>

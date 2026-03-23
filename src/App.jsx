@@ -90,7 +90,7 @@ function AppShell() {
         <Routes>
           <Route path="/" element={
             state.showSummary ? <SummaryScreen /> :
-            state.isScrolling ? <ScrollingScreen onStop={() => dispatch({ type: 'STOP_SCROLLING' })} minutes={state.earnedMinutes} /> :
+            state.isScrolling ? <ScrollingScreen onStop={() => dispatch({ type: 'STOP_SCROLLING' })} minutes={state.earnedMinutes} scrollEndTime={state.scrollEndTime} /> :
             <EarnScreen />
           } />
           <Route path="/progress" element={<ProgressScreen />} />

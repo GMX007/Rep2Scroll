@@ -49,6 +49,7 @@ const initialState = {
   showSummary: false,
   showCamera: false,
   showHowTo: false,
+  scrollEndTime: null, // unix ms timestamp — set when scrolling starts
   showPricing: false,
   showLegal: null, // null | 'privacy' | 'terms'
 
@@ -67,15 +68,19 @@ function loadState() {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       const parsed = JSON.parse(saved);
-      // Reset session-specific state on load (no carryover between sessions)
+
+      // If the user was scrolling and the timer is still running, restore the session
+      const scrollStillActive = parsed.scrollEndTime && parsed.scrollEndTime > Date.now();
+
       return {
         ...initialState,
         ...parsed,
         currentExercise: null,
         repsCompleted: 0,
-        earnedMinutes: 0,
+        // Keep earnedMinutes if scroll session is still active so the screen shows correctly
+        earnedMinutes: scrollStillActive ? (parsed.earnedMinutes || 0) : 0,
         isExercising: false,
-        isScrolling: false,
+        isScrolling: scrollStillActive ? true : false,
         showBodyPartPicker: false,
         showExercisePicker: false,
         selectedBodyPart: null,
@@ -86,6 +91,8 @@ function loadState() {
         showHowTo: false,
         showPricing: false,
         showLegal: null,
+        // Clear scrollEndTime if expired so it doesn't linger
+        scrollEndTime: scrollStillActive ? parsed.scrollEndTime : null,
       };
     }
   } catch { /* ignore */ }
@@ -221,19 +228,24 @@ function reducer(state, action) {
       return state;
     }
 
-    case 'START_SCROLLING':
+    case 'START_SCROLLING': {
+      const scrollMs = Math.floor(state.earnedMinutes * 60 * 1000);
       return {
         ...state,
         isScrolling: true,
+        scrollEndTime: Date.now() + scrollMs,
         showSummary: false,
         currentExercise: null,
       };
+    }
 
     case 'STOP_SCROLLING': {
       const nextExercise = getRandomExercise(state.tier, state.lastTwoExercises, state.userEquipment);
       return {
         ...state,
         isScrolling: false,
+        scrollEndTime: null,
+        earnedMinutes: 0,
         currentExercise: nextExercise,
         repsCompleted: 0,
       };
