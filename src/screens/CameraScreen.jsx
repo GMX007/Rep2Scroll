@@ -65,8 +65,10 @@ export default function CameraScreen({ exercise, onComplete, onSwitchExercise })
     resetRepState();
   }, []);
 
-  // 5-second positioning countdown before AI starts
+  // 5-second positioning countdown — only starts ticking after camera is active
+  // (so the browser permission dialog doesn't eat the countdown)
   useEffect(() => {
+    if (!cameraReady) return; // wait for camera
     if (countdown <= 0) return;
     const timer = setTimeout(() => {
       const next = countdown - 1;
@@ -81,7 +83,7 @@ export default function CameraScreen({ exercise, onComplete, onSwitchExercise })
       }
     }, 1000);
     return () => clearTimeout(timer);
-  }, [countdown]);
+  }, [countdown, cameraReady]);
 
   // Detection loop — process every 3rd frame for battery life
   const detectLoop = useCallback(async () => {
@@ -273,13 +275,26 @@ export default function CameraScreen({ exercise, onComplete, onSwitchExercise })
         </div>
       )}
 
-      {/* Countdown overlay — shown for first 5 seconds so user can get in position */}
-      {countdown > 0 && (
+      {/* Countdown overlay — shown until camera is ready + 5-second positioning timer */}
+      {(countdown > 0 || !cameraReady) && (
         <div style={styles.countdownOverlay}>
-          <div style={styles.countdownLabel}>Get in position!</div>
-          <div style={styles.countdownExercise}>{exercise?.name}</div>
-          <div style={styles.countdownNumber}>{countdown}</div>
-          <div style={styles.countdownSub}>AI starts in {countdown} second{countdown !== 1 ? 's' : ''}…</div>
+          {!cameraReady ? (
+            <>
+              <div style={styles.countdownLabel}>Starting camera…</div>
+              <div style={styles.countdownExercise}>{exercise?.name}</div>
+              <div style={{ ...styles.countdownNumber, fontSize: 48 }}>{'📸'}</div>
+              <div style={styles.countdownSub}>Allow camera access to continue</div>
+            </>
+          ) : (
+            <>
+              <div style={styles.countdownLabel}>Get in position!</div>
+              <div style={styles.countdownExercise}>{exercise?.name}</div>
+              <div style={styles.countdownNumber}>{countdown}</div>
+              <div style={styles.countdownSub}>
+                Put your phone down & step back{'\n'}AI starts in {countdown} second{countdown !== 1 ? 's' : ''}…
+              </div>
+            </>
+          )}
         </div>
       )}
 

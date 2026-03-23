@@ -2,6 +2,11 @@ import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching';
 import { registerRoute } from 'workbox-routing';
 import { CacheFirst, StaleWhileRevalidate } from 'workbox-strategies';
 import { ExpirationPlugin } from 'workbox-expiration';
+import { clientsClaim } from 'workbox-core';
+
+// Force the new service worker to activate immediately (no waiting for tabs to close)
+self.skipWaiting();
+clientsClaim();
 
 // Workbox injects the precache manifest here at build time
 precacheAndRoute(self.__WB_MANIFEST);
