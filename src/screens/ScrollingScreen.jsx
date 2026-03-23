@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Button from '../components/Button';
+import { scheduleScrollEndNotification, cancelScrollEndNotification } from '../services/notificationService';
 
 /**
  * Shown while the user is "scrolling" — using their earned screen time.
@@ -13,13 +14,28 @@ export default function ScrollingScreen({ onStop, minutes = 0, scrollEndTime = n
   const endTimeRef = useRef(scrollEndTime || Date.now() + totalSeconds * 1000);
   const computedRemaining = Math.max(0, Math.round((endTimeRef.current - Date.now()) / 1000));
   const [remaining, setRemaining] = useState(computedRemaining);
+  const [timeUp, setTimeUp] = useState(computedRemaining <= 0);
+
+  // Schedule SW notification on mount, cancel on unmount
+  useEffect(() => {
+    scheduleScrollEndNotification(endTimeRef.current);
+    return () => cancelScrollEndNotification();
+  }, []);
 
   useEffect(() => {
+    // Already expired when screen mounted (e.g. returned after long absence)
+    if (computedRemaining <= 0) {
+      setTimeUp(true);
+      cancelScrollEndNotification();
+      return;
+    }
+
     const tick = () => {
       const secondsLeft = Math.max(0, Math.round((endTimeRef.current - Date.now()) / 1000));
       setRemaining(secondsLeft);
       if (secondsLeft <= 0) {
-        onStop?.();
+        cancelScrollEndNotification();
+        setTimeUp(true);
       }
     };
 
@@ -44,6 +60,30 @@ export default function ScrollingScreen({ onStop, minutes = 0, scrollEndTime = n
   // Calculate original duration from end time for accurate progress ring
   const originalDuration = totalSeconds > 0 ? totalSeconds : Math.max(1, Math.round((endTimeRef.current - (Date.now() - remaining * 1000)) / 1000));
   const progress = originalDuration > 0 ? remaining / originalDuration : 0;
+
+  // Time's Up overlay — shown when timer hits zero
+  if (timeUp) {
+    return (
+      <div style={styles.timeUpScreen}>
+        <div style={styles.timeUpGlow} />
+        <div style={styles.timeUpContent}>
+          <div style={styles.timeUpEmoji}>⏰</div>
+          <div style={styles.timeUpTitle}>TIME'S UP!</div>
+          <div style={styles.timeUpSub}>
+            Your scroll time has run out. Ready to earn more? 💪
+          </div>
+          <div style={styles.timeUpCard}>
+            <div style={{ fontSize: 13, color: '#9AA0B8', lineHeight: 1.6 }}>
+              You earned your scroll time — great work! Come back, do another set, and unlock even more.
+            </div>
+          </div>
+          <Button onClick={onStop}>
+            Let's Earn More! 🔥
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={styles.screen}>
@@ -153,5 +193,58 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     fontSize: 48,
+  },
+  timeUpScreen: {
+    background: 'linear-gradient(165deg, #0F1647 0%, #1a0a2e 50%, #0F1647 100%)',
+    minHeight: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  timeUpGlow: {
+    position: 'absolute',
+    width: 350,
+    height: 350,
+    background: 'radial-gradient(circle, rgba(232,83,58,0.3) 0%, transparent 70%)',
+    top: '40%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    pointerEvents: 'none',
+  },
+  timeUpContent: {
+    textAlign: 'center',
+    padding: '40px 28px',
+    position: 'relative',
+    zIndex: 1,
+  },
+  timeUpEmoji: {
+    fontSize: 72,
+    marginBottom: 12,
+    animation: 'pulse 1s ease-in-out infinite alternate',
+  },
+  timeUpTitle: {
+    fontFamily: "'Bebas Neue', sans-serif",
+    fontSize: 56,
+    letterSpacing: 4,
+    color: '#E8533A',
+    lineHeight: 1,
+    marginBottom: 12,
+    textShadow: '0 0 40px rgba(232,83,58,0.5)',
+  },
+  timeUpSub: {
+    fontSize: 16,
+    color: '#F4F1EB',
+    marginBottom: 24,
+    lineHeight: 1.5,
+  },
+  timeUpCard: {
+    background: 'rgba(255,255,255,0.04)',
+    border: '1px solid rgba(255,255,255,0.08)',
+    borderRadius: 16,
+    padding: '16px',
+    marginBottom: 28,
+    textAlign: 'left',
   },
 };
