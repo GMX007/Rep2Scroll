@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState, useContext, useCallback } from 'rea
 import { AppContext } from '../AppContext';
 import { initPoseDetector, estimatePose } from '../services/poseDetection';
 import { verifyExercise, resetRepState } from '../services/exerciseVerifier';
-import { playRepComplete, playSetComplete, playFormWarning, playFormBreak } from '../services/audioService';
+import { playRepComplete, playSetComplete, playFormWarning, playFormBreak, playCountdownTick } from '../services/audioService';
 import FormIndicator from '../components/FormIndicator';
 import Button from '../components/Button';
 
@@ -24,6 +24,7 @@ export default function CameraScreen({ exercise, onComplete, onSwitchExercise })
   const [formStatus, setFormStatus] = useState({ level: 'green', message: 'Get ready...' });
   const [paused, setPaused] = useState(false);
   const [muted, setMuted] = useState(!state.settings?.audioEnabled);
+  const [countdown, setCountdown] = useState(5); // 5-second positioning countdown
   const lastFormLevel = useRef('green');
 
   const isHold = exercise?.type === 'hold';
@@ -64,9 +65,27 @@ export default function CameraScreen({ exercise, onComplete, onSwitchExercise })
     resetRepState();
   }, []);
 
+  // 5-second positioning countdown before AI starts
+  useEffect(() => {
+    if (countdown <= 0) return;
+    const timer = setTimeout(() => {
+      const next = countdown - 1;
+      setCountdown(next);
+      if (!muted) {
+        if (next === 0) {
+          // "GO!" — play set complete sound as a loud start signal
+          playSetComplete();
+        } else {
+          playCountdownTick();
+        }
+      }
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [countdown]);
+
   // Detection loop — process every 3rd frame for battery life
   const detectLoop = useCallback(async () => {
-    if (!videoRef.current || !cameraReady || !modelReady || paused) {
+    if (!videoRef.current || !cameraReady || !modelReady || paused || countdown > 0) {
       animFrameRef.current = requestAnimationFrame(detectLoop);
       return;
     }
@@ -133,7 +152,7 @@ export default function CameraScreen({ exercise, onComplete, onSwitchExercise })
     }
 
     animFrameRef.current = requestAnimationFrame(detectLoop);
-  }, [cameraReady, modelReady, paused, exercise, isHold, target, onComplete, state.settings, muted]);
+  }, [cameraReady, modelReady, paused, countdown, exercise, isHold, target, onComplete, state.settings, muted]);
 
   useEffect(() => {
     animFrameRef.current = requestAnimationFrame(detectLoop);
@@ -251,6 +270,16 @@ export default function CameraScreen({ exercise, onComplete, onSwitchExercise })
               End Set
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Countdown overlay — shown for first 5 seconds so user can get in position */}
+      {countdown > 0 && (
+        <div style={styles.countdownOverlay}>
+          <div style={styles.countdownLabel}>Get in position!</div>
+          <div style={styles.countdownExercise}>{exercise?.name}</div>
+          <div style={styles.countdownNumber}>{countdown}</div>
+          <div style={styles.countdownSub}>AI starts in {countdown} second{countdown !== 1 ? 's' : ''}…</div>
         </div>
       )}
 
@@ -419,5 +448,42 @@ const styles = {
     cursor: 'pointer',
     fontFamily: "'DM Sans', sans-serif",
     textDecoration: 'underline',
+  },
+  countdownOverlay: {
+    position: 'absolute',
+    inset: 0,
+    background: 'rgba(10, 14, 40, 0.82)',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 30,
+  },
+  countdownLabel: {
+    fontSize: 13,
+    fontWeight: 700,
+    letterSpacing: 3,
+    textTransform: 'uppercase',
+    color: '#F0A500',
+    marginBottom: 6,
+  },
+  countdownExercise: {
+    fontFamily: "'Bebas Neue', sans-serif",
+    fontSize: 28,
+    letterSpacing: 2,
+    color: '#F4F1EB',
+    marginBottom: 20,
+  },
+  countdownNumber: {
+    fontFamily: "'Bebas Neue', sans-serif",
+    fontSize: 120,
+    lineHeight: 1,
+    color: '#E8533A',
+    textShadow: '0 0 60px rgba(232,83,58,0.6)',
+    marginBottom: 16,
+  },
+  countdownSub: {
+    fontSize: 14,
+    color: '#9AA0B8',
   },
 };

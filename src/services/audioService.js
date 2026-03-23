@@ -188,10 +188,10 @@ export function playFormBreak() {
 }
 
 /**
- * Countdown tick — subtle tick sound for scroll timer
+ * Countdown tick — crisp beep for the positioning countdown
  */
 export function playCountdownTick() {
-  playTone(1000, 0.05, 'sine', 0.1);
+  playTone(660, 0.12, 'sine', 0.25);
 }
 
 /**
