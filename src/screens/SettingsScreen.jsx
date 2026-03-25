@@ -4,26 +4,46 @@ import { AppContext } from '../AppContext';
 export default function SettingsScreen() {
   const { state, dispatch } = useContext(AppContext);
   const [confirmReset, setConfirmReset] = useState(false);
+  const [updateStatus, setUpdateStatus] = useState(null); // null | 'checking' | 'updated' | 'fresh'
 
   const handleReset = async () => {
-  if (!confirmReset) {
-    setConfirmReset(true);
-    return;
-  }
-  // Clear app data
-  localStorage.clear();
-  // Clear service worker caches so new version loads
-  if ('caches' in window) {
-    const keys = await caches.keys();
-    await Promise.all(keys.map(key => caches.delete(key)));
-  }
-  // Unregister service worker so it re-installs fresh
-  if ('serviceWorker' in navigator) {
-    const regs = await navigator.serviceWorker.getRegistrations();
-    await Promise.all(regs.map(reg => reg.unregister()));
-  }
-  window.location.reload(true);
-};
+    if (!confirmReset) {
+      setConfirmReset(true);
+      return;
+    }
+    // Clear app data
+    localStorage.clear();
+    // Clear service worker caches so new version loads
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(key => caches.delete(key)));
+    }
+    // Unregister service worker so it re-installs fresh
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(reg => reg.unregister()));
+    }
+    window.location.reload(true);
+  };
+
+  const handleCheckForUpdate = async () => {
+    setUpdateStatus('checking');
+    try {
+      if ('caches' in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map(key => caches.delete(key)));
+      }
+      if ('serviceWorker' in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map(reg => reg.update()));
+      }
+      setUpdateStatus('updated');
+      setTimeout(() => window.location.reload(true), 1000);
+    } catch {
+      setUpdateStatus('fresh');
+      setTimeout(() => setUpdateStatus(null), 3000);
+    }
+  };
 
   const SettingRow = ({ label, value, onClick }) => (
     <div style={styles.row} onClick={onClick}>
@@ -125,6 +145,16 @@ export default function SettingsScreen() {
         <SettingRow label="Version" value="1.0.0" />
         <SettingRow label="Privacy Policy" value="" onClick={() => dispatch({ type: 'SHOW_LEGAL', payload: 'privacy' })} />
         <SettingRow label="Terms of Service" value="" onClick={() => dispatch({ type: 'SHOW_LEGAL', payload: 'terms' })} />
+        {/* Check for Update */}
+        <div style={styles.row} onClick={updateStatus ? undefined : handleCheckForUpdate}>
+          <span style={styles.rowLabel}>
+            {updateStatus === 'checking' ? '⏳ Checking...' :
+             updateStatus === 'updated'  ? '✅ Reloading...' :
+             updateStatus === 'fresh'    ? '✅ Already up to date' :
+             '🔁 Check for Update'}
+          </span>
+          {!updateStatus && <span style={styles.rowValue}>{'›'}</span>}
+        </div>
       </div>
 
       {/* Reset */}
