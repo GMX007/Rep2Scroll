@@ -17,6 +17,7 @@ const initialState = {
 
   // User
   gender: 'male', // 'male' | 'female'
+  activityLevel: 'moderate', // 'beginner' | 'light' | 'moderate' | 'active'
   tier: 'free', // 'free' | 'standard'
   userEquipment: [], // e.g. ['Dumbbells', 'Pull-up Bar']
   showEquipmentSetup: false,
@@ -69,7 +70,6 @@ function loadState() {
     if (saved) {
       const parsed = JSON.parse(saved);
 
-      // If the user was scrolling and the timer is still running, restore the session
       const scrollStillActive = parsed.scrollEndTime && parsed.scrollEndTime > Date.now();
 
       return {
@@ -77,7 +77,6 @@ function loadState() {
         ...parsed,
         currentExercise: null,
         repsCompleted: 0,
-        // Keep earnedMinutes if scroll session is still active so the screen shows correctly
         earnedMinutes: scrollStillActive ? (parsed.earnedMinutes || 0) : 0,
         isExercising: false,
         isScrolling: scrollStillActive ? true : false,
@@ -91,7 +90,6 @@ function loadState() {
         showHowTo: false,
         showPricing: false,
         showLegal: null,
-        // Clear scrollEndTime if expired so it doesn't linger
         scrollEndTime: scrollStillActive ? parsed.scrollEndTime : null,
       };
     }
@@ -101,7 +99,6 @@ function loadState() {
 
 function saveState(state) {
   try {
-    // Only persist non-session state
     const { currentExercise, isExercising, isScrolling, showCamera, showLevelUp, showSummary, showBodyPartPicker, showExercisePicker, selectedBodyPart, showEquipmentSetup, ...persistent } = state;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(persistent));
   } catch { /* ignore */ }
@@ -109,7 +106,7 @@ function saveState(state) {
 
 function calculateMinutesEarned(exercise, reps, holdTime) {
   if (exercise.type === 'hold') {
-    const rate = earningRates.plankHold; // default hold rate
+    const rate = earningRates.plankHold;
     return (holdTime / rate.seconds) * rate.minutesEarned;
   }
   return reps * earningRates.repBased.minutesPerRep;
@@ -118,9 +115,13 @@ function calculateMinutesEarned(exercise, reps, holdTime) {
 function reducer(state, action) {
   switch (action.type) {
     case 'COMPLETE_ONBOARDING': {
-      // payload.selections[0] is 'Male' or 'Female' from the gender step
       const genderChoice = action.payload?.[0] === 'Female' ? 'female' : 'male';
-      return { ...state, onboardingComplete: true, gender: genderChoice };
+      const activityRaw = action.payload?.[2] || '';
+      const activityLevel =
+        activityRaw.includes('couch') ? 'beginner' :
+        activityRaw.includes('1-2') ? 'light' :
+        activityRaw.includes('3-4') ? 'moderate' : 'active';
+      return { ...state, onboardingComplete: true, gender: genderChoice, activityLevel };
     }
 
     case 'ACCEPT_DISCLAIMER':
@@ -151,14 +152,12 @@ function reducer(state, action) {
       const xpGained = Math.round(reps * 10 * (formScore / 100)) || Math.round(holdTime * 2);
       const newXP = state.xp + xpGained;
 
-      // Check for level up
       const oldLevel = getLevelForXP(state.xp);
       const newLevel = getLevelForXP(newXP);
       const leveledUp = newLevel.level > oldLevel.level;
 
       const lastTwo = [state.currentExercise.id, ...state.lastTwoExercises].slice(0, 2);
 
-      // Update daily history
       const today = new Date().toISOString().split('T')[0];
       const todayHistory = state.dailyHistory[today] || { reps: 0, minutes: 0, sessions: 0, bestFormScore: 0 };
       const updatedDailyHistory = {
@@ -171,7 +170,6 @@ function reducer(state, action) {
         },
       };
 
-      // Check personal best — compare reps for this exercise against history
       const exerciseKey = state.currentExercise.id;
       const prevBest = state.exerciseBests?.[exerciseKey] || 0;
       const isPersonalBest = reps > prevBest && reps > 0;
@@ -215,7 +213,6 @@ function reducer(state, action) {
     }
 
     case 'SWITCH_EXERCISE': {
-      // Find the easier variation exercise by name
       const target = exercises.find(e => e.name === action.payload);
       if (target) {
         return {
@@ -261,7 +258,6 @@ function reducer(state, action) {
       const key = action.payload;
       let newValue;
       if (key === 'camera') {
-        // Toggle between 'Front' and 'Rear'
         newValue = state.settings.camera === 'Front' ? 'Rear' : 'Front';
       } else {
         newValue = !state.settings[key];
@@ -340,7 +336,7 @@ function reducer(state, action) {
       return { ...state, showPricing: false };
 
     case 'SHOW_LEGAL':
-      return { ...state, showLegal: action.payload }; // 'privacy' or 'terms'
+      return { ...state, showLegal: action.payload };
 
     case 'DISMISS_LEGAL':
       return { ...state, showLegal: null };
@@ -358,12 +354,10 @@ export const AppContext = createContext();
 export function AppProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, null, loadState);
 
-  // Save persistent state on change
   useEffect(() => {
     saveState(state);
   }, [state]);
 
-  // Assign initial exercise if needed
   useEffect(() => {
     if (state.onboardingComplete && state.disclaimerAccepted && !state.currentExercise && !state.showEquipmentSetup) {
       dispatch({ type: 'NEW_SET' });
