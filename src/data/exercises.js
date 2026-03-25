@@ -1403,7 +1403,7 @@ export const exercises = [
   },
 ];
 
-export const FREE_EXERCISE_IDS = ['push-up', 'squat', 'plank'];
+export const FREE_EXERCISE_IDS = ['push-up', 'squat', 'plank', 'superman'];
 
 export const bodyAreas = [
   'Core', 'Upper Body', 'Lower Body', 'Chest', 'Back', 'Arms', 'Abdominals', 'Calves', 'Full Body'
