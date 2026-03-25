@@ -2,42 +2,34 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Button from '../components/Button';
 import { scheduleScrollEndNotification, cancelScrollEndNotification } from '../services/notificationService';
 
-/**
- * Shown while the user is "scrolling" — using their earned screen time.
- * Timer uses wall-clock time (Date.now) so it keeps counting even when
- * the user switches to another app or the browser tab is backgrounded.
- *
- * Features a Picture-in-Picture floating timer that stays visible over other apps.
- */
-export default function ScrollingScreen({ onStop, minutes = 0, scrollEndTime = null }) {
+export default function ScrollingScreen({ onStop, minutes = 0, scrollEndTime = null, forceTimeUp = false }) {
   const totalSeconds = Math.floor(minutes * 60);
-
-  // Use persisted end time if available (survives app restarts), otherwise compute fresh
   const endTimeRef = useRef(scrollEndTime || Date.now() + totalSeconds * 1000);
-  const computedRemaining = Math.max(0, Math.round((endTimeRef.current - Date.now()) / 1000));
+  const computedRemaining = forceTimeUp ? 0 : Math.max(0, Math.round((endTimeRef.current - Date.now()) / 1000));
   const [remaining, setRemaining] = useState(computedRemaining);
-  const [timeUp, setTimeUp] = useState(computedRemaining <= 0);
+  const [timeUp, setTimeUp] = useState(forceTimeUp || computedRemaining <= 0);
   const [pipActive, setPipActive] = useState(false);
 
-  // PiP refs
   const canvasRef = useRef(null);
   const videoRef = useRef(null);
   const pipAnimRef = useRef(null);
-  const remainingRef = useRef(remaining); // ref so PiP draw loop stays current
+  const remainingRef = useRef(remaining);
 
-  // Keep remainingRef in sync
-  useEffect(() => {
-    remainingRef.current = remaining;
-  }, [remaining]);
+  useEffect(() => { remainingRef.current = remaining; }, [remaining]);
 
-  // Schedule SW notification on mount, cancel on unmount
   useEffect(() => {
     scheduleScrollEndNotification(endTimeRef.current);
     return () => cancelScrollEndNotification();
   }, []);
 
   useEffect(() => {
-    // Already expired when screen mounted (e.g. returned after long absence)
+    // If forceTimeUp is set from outside (global timer fired), go straight to time's up
+    if (forceTimeUp) {
+      setTimeUp(true);
+      cancelScrollEndNotification();
+      return;
+    }
+
     if (computedRemaining <= 0) {
       setTimeUp(true);
       cancelScrollEndNotification();
@@ -53,23 +45,17 @@ export default function ScrollingScreen({ onStop, minutes = 0, scrollEndTime = n
       }
     };
 
-    // Tick immediately on mount and when tab becomes visible again
     tick();
     const interval = setInterval(tick, 1000);
-
-    // Page Visibility API — recalculate when user comes back to the app
-    const handleVisibilityChange = () => {
-      if (!document.hidden) tick();
-    };
+    const handleVisibilityChange = () => { if (!document.hidden) tick(); };
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
       clearInterval(interval);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, []);
+  }, [forceTimeUp]);
 
-  // ─── Picture-in-Picture floating timer ───
   const drawPipCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -80,17 +66,14 @@ export default function ScrollingScreen({ onStop, minutes = 0, scrollEndTime = n
     const timeStr = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
     const pct = totalSeconds > 0 ? sec / totalSeconds : 0;
 
-    // Background
     ctx.fillStyle = '#0F1647';
     ctx.fillRect(0, 0, 300, 180);
 
-    // Progress bar background
     ctx.fillStyle = 'rgba(255,255,255,0.1)';
     ctx.beginPath();
     ctx.roundRect(20, 140, 260, 16, 8);
     ctx.fill();
 
-    // Progress bar fill
     const grad = ctx.createLinearGradient(20, 0, 280, 0);
     grad.addColorStop(0, '#2ECC71');
     grad.addColorStop(1, '#27AE60');
@@ -99,20 +82,17 @@ export default function ScrollingScreen({ onStop, minutes = 0, scrollEndTime = n
     ctx.roundRect(20, 140, Math.max(0, 260 * pct), 16, 8);
     ctx.fill();
 
-    // Label
     ctx.fillStyle = '#2ECC71';
     ctx.font = '600 14px sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('SCROLL TIME LEFT', 150, 35);
 
-    // Timer
     ctx.fillStyle = '#F4F1EB';
     ctx.font = '700 72px sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText(timeStr, 150, 115);
 
     if (sec <= 0) {
-      // Show "TIME'S UP" overlay
       ctx.fillStyle = 'rgba(15,22,71,0.85)';
       ctx.fillRect(0, 0, 300, 180);
       ctx.fillStyle = '#E8533A';
@@ -129,27 +109,19 @@ export default function ScrollingScreen({ onStop, minutes = 0, scrollEndTime = n
       const canvas = canvasRef.current;
       const video = videoRef.current;
       if (!canvas || !video) return;
-
-      // Draw initial frame
       drawPipCanvas();
-
-      // Stream canvas to video
-      const stream = canvas.captureStream(10); // 10fps is fine for a countdown
+      const stream = canvas.captureStream(10);
       video.srcObject = stream;
       await video.play();
-
-      // Request PiP
       if (video.requestPictureInPicture) {
         await video.requestPictureInPicture();
         setPipActive(true);
       }
     } catch (err) {
       console.warn('[SweatNScroll] PiP not supported:', err.message);
-      // Fallback: just minimize the browser — the notification will still work
     }
   }, [drawPipCanvas]);
 
-  // Clean up PiP on unmount
   useEffect(() => {
     return () => {
       if (pipAnimRef.current) cancelAnimationFrame(pipAnimRef.current);
@@ -159,7 +131,6 @@ export default function ScrollingScreen({ onStop, minutes = 0, scrollEndTime = n
     };
   }, []);
 
-  // Listen for PiP close
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
@@ -175,10 +146,8 @@ export default function ScrollingScreen({ onStop, minutes = 0, scrollEndTime = n
   const secs = remaining % 60;
   const originalDuration = totalSeconds > 0 ? totalSeconds : Math.max(1, Math.round((endTimeRef.current - (Date.now() - remaining * 1000)) / 1000));
   const progress = originalDuration > 0 ? remaining / originalDuration : 0;
-
   const pipSupported = typeof document !== 'undefined' && 'pictureInPictureEnabled' in document;
 
-  // Time's Up overlay — shown when timer hits zero
   if (timeUp) {
     return (
       <div style={styles.timeUpScreen}>
@@ -205,8 +174,6 @@ export default function ScrollingScreen({ onStop, minutes = 0, scrollEndTime = n
   return (
     <div style={styles.screen}>
       <div style={styles.glow} />
-
-      {/* Hidden PiP canvas and video */}
       <canvas ref={canvasRef} width={300} height={180} style={{ display: 'none' }} />
       <video ref={videoRef} playsInline muted style={{ width: 0, height: 0, position: 'absolute' }} />
 
@@ -219,7 +186,6 @@ export default function ScrollingScreen({ onStop, minutes = 0, scrollEndTime = n
           Go use your phone! When the timer runs out, come back and earn more.
         </div>
 
-        {/* Progress ring */}
         <div style={styles.ringContainer}>
           <svg width="160" height="160" viewBox="0 0 160 160">
             <circle cx="80" cy="80" r="70" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="6" />
@@ -244,7 +210,6 @@ export default function ScrollingScreen({ onStop, minutes = 0, scrollEndTime = n
           <div style={styles.ringText}>{'📱'}</div>
         </div>
 
-        {/* Go Scroll / Floating Timer button */}
         {pipSupported && !pipActive && (
           <div style={{ marginTop: 24 }}>
             <Button onClick={startPip}>
@@ -379,10 +344,7 @@ const styles = {
     position: 'relative',
     zIndex: 1,
   },
-  timeUpEmoji: {
-    fontSize: 72,
-    marginBottom: 12,
-  },
+  timeUpEmoji: { fontSize: 72, marginBottom: 12 },
   timeUpTitle: {
     fontFamily: "'Bebas Neue', sans-serif",
     fontSize: 56,
@@ -407,3 +369,4 @@ const styles = {
     textAlign: 'left',
   },
 };
+
