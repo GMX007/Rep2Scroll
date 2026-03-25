@@ -5,6 +5,7 @@ import { verifyExercise, resetRepState } from '../services/exerciseVerifier';
 import { playRepComplete, playSetComplete, playFormWarning, playFormBreak, playCountdownTick } from '../services/audioService';
 import FormIndicator from '../components/FormIndicator';
 import Button from '../components/Button';
+import { getScaledTarget } from '../data/exercises';
 
 /**
  * Live camera exercise screen with real-time pose detection.
@@ -24,11 +25,11 @@ export default function CameraScreen({ exercise, onComplete, onSwitchExercise })
   const [formStatus, setFormStatus] = useState({ level: 'green', message: 'Get ready...' });
   const [paused, setPaused] = useState(false);
   const [muted, setMuted] = useState(!state.settings?.audioEnabled);
-  const [countdown, setCountdown] = useState(5); // 5-second positioning countdown
+  const [countdown, setCountdown] = useState(5);
   const lastFormLevel = useRef('green');
 
   const isHold = exercise?.type === 'hold';
-  const target = exercise?.defaultTarget || 14;
+  const target = getScaledTarget(exercise, state.gender, state.activityLevel);
 
   // Start camera
   useEffect(() => {
@@ -65,17 +66,15 @@ export default function CameraScreen({ exercise, onComplete, onSwitchExercise })
     resetRepState();
   }, []);
 
-  // 5-second positioning countdown — only starts ticking after camera is active
-  // (so the browser permission dialog doesn't eat the countdown)
+  // 5-second positioning countdown
   useEffect(() => {
-    if (!cameraReady) return; // wait for camera
+    if (!cameraReady) return;
     if (countdown <= 0) return;
     const timer = setTimeout(() => {
       const next = countdown - 1;
       setCountdown(next);
       if (!muted) {
         if (next === 0) {
-          // "GO!" — play set complete sound as a loud start signal
           playSetComplete();
         } else {
           playCountdownTick();
@@ -85,7 +84,7 @@ export default function CameraScreen({ exercise, onComplete, onSwitchExercise })
     return () => clearTimeout(timer);
   }, [countdown, cameraReady]);
 
-  // Detection loop — process every 3rd frame for battery life
+  // Detection loop
   const detectLoop = useCallback(async () => {
     if (!videoRef.current || !cameraReady || !modelReady || paused || countdown > 0) {
       animFrameRef.current = requestAnimationFrame(detectLoop);
@@ -109,7 +108,6 @@ export default function CameraScreen({ exercise, onComplete, onSwitchExercise })
           if (!muted) playFormBreak();
         }
 
-        // Audio cue for form warnings (only on transition to amber/red)
         if (!muted && result.level === 'red' && lastFormLevel.current !== 'red') {
           playFormWarning();
         }
@@ -117,7 +115,7 @@ export default function CameraScreen({ exercise, onComplete, onSwitchExercise })
 
         if (isHold && result.holdValid) {
           setHoldTime(prev => {
-            const newTime = prev + (1 / 10); // ~10 fps effective rate
+            const newTime = prev + (1 / 10);
             if (newTime >= target) {
               if (!muted) playSetComplete();
               onComplete?.({ holdTime: target, formScore: 100 });
@@ -138,12 +136,10 @@ export default function CameraScreen({ exercise, onComplete, onSwitchExercise })
             return newReps;
           });
 
-          // Haptic feedback on rep completion
           if (state.settings?.vibrationEnabled && navigator.vibrate) {
             navigator.vibrate(50);
           }
 
-          // Red form = vibrate warning
           if (result.level === 'red' && navigator.vibrate) {
             navigator.vibrate([200]);
           }
@@ -175,7 +171,6 @@ export default function CameraScreen({ exercise, onComplete, onSwitchExercise })
 
       {/* Overlay */}
       <div style={styles.overlay}>
-        {/* Exercise info */}
         <div style={styles.topBar}>
           <div style={styles.exerciseName}>{exercise?.name}</div>
           <div style={styles.exerciseTarget}>
@@ -183,7 +178,6 @@ export default function CameraScreen({ exercise, onComplete, onSwitchExercise })
           </div>
         </div>
 
-        {/* Rep / Hold counter */}
         <div style={styles.counter}>
           <div style={styles.counterVal}>
             {isHold ? Math.floor(holdTime) : reps}
@@ -193,7 +187,6 @@ export default function CameraScreen({ exercise, onComplete, onSwitchExercise })
           </div>
         </div>
 
-        {/* Mini effort bar */}
         <div style={styles.miniBar}>
           <div style={{
             ...styles.miniBarFill,
@@ -201,11 +194,8 @@ export default function CameraScreen({ exercise, onComplete, onSwitchExercise })
           }} />
         </div>
 
-        {/* Form indicator */}
         <div style={styles.bottom}>
           <FormIndicator status={formStatus.level === 'pause' ? 'red' : formStatus.level} message={formStatus.message} />
-
-          {/* Loading indicator */}
           {!modelReady && (
             <div style={styles.loading}>Loading AI model...</div>
           )}
@@ -216,7 +206,6 @@ export default function CameraScreen({ exercise, onComplete, onSwitchExercise })
       {paused && (
         <div style={styles.pauseOverlay}>
           <div style={styles.pauseContent}>
-            {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
               <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, color: '#E8533A', letterSpacing: 2 }}>SWEATNSCROLL</div>
               <div style={{ background: 'rgba(240,165,0,0.15)', border: '1px solid rgba(240,165,0,0.3)', borderRadius: 20, padding: '4px 10px', fontSize: 11, fontWeight: 600, color: '#F0A500', display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -224,11 +213,9 @@ export default function CameraScreen({ exercise, onComplete, onSwitchExercise })
               </div>
             </div>
 
-            {/* Form Alert label */}
             <div style={{ fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: '#9AA0B8', marginBottom: 8 }}>Form Alert</div>
             <div style={styles.pauseTitle}>Form Breaking Down</div>
 
-            {/* Alert card */}
             <div style={styles.alertCard}>
               <div style={{ fontSize: 14, fontWeight: 600, color: '#F4F1EB', marginBottom: 6 }}>
                 Your form is breaking down — that means you're working hard.
@@ -238,7 +225,6 @@ export default function CameraScreen({ exercise, onComplete, onSwitchExercise })
               </div>
             </div>
 
-            {/* Easier variation */}
             {exercise?.easierVariation && (
               <>
                 <div style={{ fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: '#9AA0B8', marginBottom: 12, marginTop: 20 }}>
@@ -275,7 +261,7 @@ export default function CameraScreen({ exercise, onComplete, onSwitchExercise })
         </div>
       )}
 
-      {/* Countdown overlay — shown until camera is ready + 5-second positioning timer */}
+      {/* Countdown overlay */}
       {(countdown > 0 || !cameraReady) && (
         <div style={styles.countdownOverlay}>
           {!cameraReady ? (
@@ -298,15 +284,10 @@ export default function CameraScreen({ exercise, onComplete, onSwitchExercise })
         </div>
       )}
 
-      {/* Mute toggle button */}
-      <button
-        onClick={() => setMuted(m => !m)}
-        style={styles.muteBtn}
-      >
+      <button onClick={() => setMuted(m => !m)} style={styles.muteBtn}>
         {muted ? '🔇' : '🔊'}
       </button>
 
-      {/* End session button */}
       <button onClick={() => onComplete?.({ reps, holdTime, formScore: 80 })} style={styles.endBtn}>
         End Session
       </button>
@@ -325,7 +306,7 @@ const styles = {
     width: '100%',
     height: '100%',
     objectFit: 'cover',
-    transform: 'scaleX(-1)', // mirror
+    transform: 'scaleX(-1)',
   },
   overlay: {
     position: 'absolute',
