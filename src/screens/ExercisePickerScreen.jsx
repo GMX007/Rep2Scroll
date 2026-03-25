@@ -26,7 +26,6 @@ export default function ExercisePickerScreen() {
     <div style={styles.screen}>
       <div style={styles.bgGlow} />
 
-      {/* Header */}
       <div style={styles.header}>
         <button onClick={handleBack} style={styles.backBtn}>{'←'}</button>
         <span style={styles.logo}>SWEATNSCROLL</span>
@@ -55,8 +54,7 @@ export default function ExercisePickerScreen() {
                     <span style={{ color: difficultyColor[ex.difficulty] || '#9AA0B8' }}>
                       {ex.difficulty}
                     </span>
-                    {' · '}
-                    {ex.type === 'hold' ? `${ex.defaultTarget}s hold` : `${ex.defaultTarget} reps`}
+                    {' · '}{ex.equipment}
                   </div>
                 </div>
               </div>
