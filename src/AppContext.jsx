@@ -1,4 +1,4 @@
-import React, { createContext, useReducer, useEffect } from 'react';
+import React, { createContext, useReducer, useEffect, useRef } from 'react';
 import { getRandomExercise, getRandomExerciseByCategory, exercises } from './data/exercises';
 import { getLevelForXP } from './data/levels';
 import { DAILY_CAP_MINUTES, GRACE_PERIOD_SECONDS, earningRates } from './theme/tokens';
@@ -16,18 +16,16 @@ const initialState = {
   disclaimerAccepted: false,
 
   // User
-  gender: 'male', // 'male' | 'female'
-  activityLevel: 'moderate', // 'beginner' | 'light' | 'moderate' | 'active'
-  tier: 'free', // 'free' | 'standard'
-  userEquipment: [], // e.g. ['Dumbbells', 'Pull-up Bar']
+  gender: 'male',
+  activityLevel: 'moderate',
+  tier: 'free',
+  userEquipment: [],
   showEquipmentSetup: false,
   xp: 0,
   streak: 0,
   totalReps: 0,
   sessionsCompleted: 0,
-  // Daily history: { 'YYYY-MM-DD': { reps, minutes, sessions, bestFormScore } }
   dailyHistory: {},
-  // Personal bests per exercise: { 'push-up': 14, 'squat': 20 }
   exerciseBests: {},
 
   // Current session
@@ -36,13 +34,14 @@ const initialState = {
   earnedMinutes: 0,
   isExercising: false,
   isScrolling: false,
+  scrollTimeUp: false, // NEW — true when timer expires, triggers TIME'S UP from any screen
   formStatus: { level: 'green', message: 'Ready to go' },
   lastTwoExercises: [],
 
   // Exercise picker (standard tier)
   showBodyPartPicker: false,
   showExercisePicker: false,
-  selectedBodyPart: null, // 'upper' | 'lower' | 'arms' | 'core'
+  selectedBodyPart: null,
 
   // Post-session
   lastSession: null,
@@ -50,9 +49,9 @@ const initialState = {
   showSummary: false,
   showCamera: false,
   showHowTo: false,
-  scrollEndTime: null, // unix ms timestamp — set when scrolling starts
+  scrollEndTime: null,
   showPricing: false,
-  showLegal: null, // null | 'privacy' | 'terms'
+  showLegal: null,
 
   // Settings
   settings: {
@@ -69,9 +68,7 @@ function loadState() {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       const parsed = JSON.parse(saved);
-
       const scrollStillActive = parsed.scrollEndTime && parsed.scrollEndTime > Date.now();
-
       return {
         ...initialState,
         ...parsed,
@@ -80,6 +77,7 @@ function loadState() {
         earnedMinutes: scrollStillActive ? (parsed.earnedMinutes || 0) : 0,
         isExercising: false,
         isScrolling: scrollStillActive ? true : false,
+        scrollTimeUp: false,
         showBodyPartPicker: false,
         showExercisePicker: false,
         selectedBodyPart: null,
@@ -99,7 +97,12 @@ function loadState() {
 
 function saveState(state) {
   try {
-    const { currentExercise, isExercising, isScrolling, showCamera, showLevelUp, showSummary, showBodyPartPicker, showExercisePicker, selectedBodyPart, showEquipmentSetup, ...persistent } = state;
+    const {
+      currentExercise, isExercising, isScrolling, showCamera,
+      showLevelUp, showSummary, showBodyPartPicker, showExercisePicker,
+      selectedBodyPart, showEquipmentSetup, scrollTimeUp,
+      ...persistent
+    } = state;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(persistent));
   } catch { /* ignore */ }
 }
@@ -230,9 +233,18 @@ function reducer(state, action) {
       return {
         ...state,
         isScrolling: true,
+        scrollTimeUp: false,
         scrollEndTime: Date.now() + scrollMs,
         showSummary: false,
         currentExercise: null,
+      };
+    }
+
+    // NEW — fired by the global timer in AppProvider when time runs out
+    case 'SCROLL_TIME_UP': {
+      return {
+        ...state,
+        scrollTimeUp: true,
       };
     }
 
@@ -241,6 +253,7 @@ function reducer(state, action) {
       return {
         ...state,
         isScrolling: false,
+        scrollTimeUp: false,
         scrollEndTime: null,
         earnedMinutes: 0,
         currentExercise: nextExercise,
@@ -353,6 +366,7 @@ export const AppContext = createContext();
 
 export function AppProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, null, loadState);
+  const timerRef = useRef(null);
 
   useEffect(() => {
     saveState(state);
@@ -363,6 +377,42 @@ export function AppProvider({ children }) {
       dispatch({ type: 'NEW_SET' });
     }
   }, [state.onboardingComplete, state.disclaimerAccepted, state.showEquipmentSetup]);
+
+  // ─── Global scroll timer ───────────────────────────────────────────────────
+  // Runs at the AppProvider level so it keeps ticking regardless of which
+  // screen the user is on. When time expires it dispatches SCROLL_TIME_UP
+  // which sets scrollTimeUp: true — AppShell then shows the TIME'S UP overlay.
+  useEffect(() => {
+    // Clear any existing timer
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+
+    if (!state.isScrolling || !state.scrollEndTime || state.scrollTimeUp) return;
+
+    const check = () => {
+      if (Date.now() >= state.scrollEndTime) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+        dispatch({ type: 'SCROLL_TIME_UP' });
+      }
+    };
+
+    check(); // check immediately in case we're already past end time
+    timerRef.current = setInterval(check, 1000);
+
+    // Also re-check when user comes back to the tab
+    const handleVisibility = () => {
+      if (!document.hidden) check();
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, [state.isScrolling, state.scrollEndTime, state.scrollTimeUp]);
 
   return (
     <AppContext.Provider value={{ state, dispatch }}>
