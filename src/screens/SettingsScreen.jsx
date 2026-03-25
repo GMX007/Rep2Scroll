@@ -5,14 +5,25 @@ export default function SettingsScreen() {
   const { state, dispatch } = useContext(AppContext);
   const [confirmReset, setConfirmReset] = useState(false);
 
-  const handleReset = () => {
-    if (!confirmReset) {
-      setConfirmReset(true);
-      return;
-    }
-    localStorage.clear();
-    window.location.reload();
-  };
+  const handleReset = async () => {
+  if (!confirmReset) {
+    setConfirmReset(true);
+    return;
+  }
+  // Clear app data
+  localStorage.clear();
+  // Clear service worker caches so new version loads
+  if ('caches' in window) {
+    const keys = await caches.keys();
+    await Promise.all(keys.map(key => caches.delete(key)));
+  }
+  // Unregister service worker so it re-installs fresh
+  if ('serviceWorker' in navigator) {
+    const regs = await navigator.serviceWorker.getRegistrations();
+    await Promise.all(regs.map(reg => reg.unregister()));
+  }
+  window.location.reload(true);
+};
 
   const SettingRow = ({ label, value, onClick }) => (
     <div style={styles.row} onClick={onClick}>
