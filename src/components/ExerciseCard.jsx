@@ -1,12 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import InstructionPopup from './InstructionPopup';
+import { AppContext } from '../AppContext';
+import { getScaledTarget } from '../data/exercises';
 
 /**
  * Exercise card showing current exercise, progress, and info button.
  */
 export default function ExerciseCard({ exercise, reps = 0, onStart }) {
   const [showInfo, setShowInfo] = useState(false);
-  const target = exercise?.defaultTarget || 14;
+  const { state } = useContext(AppContext);
+  const target = exercise ? getScaledTarget(exercise, state.gender, state.activityLevel) : 14;
   const isHold = exercise?.type === 'hold';
 
   return (
@@ -27,7 +30,6 @@ export default function ExerciseCard({ exercise, reps = 0, onStart }) {
           <div style={styles.repsLabel}>/ {target} {isHold ? 'sec' : 'reps'}</div>
         </div>
       </div>
-
       {showInfo && (
         <InstructionPopup exercise={exercise} onClose={() => setShowInfo(false)} onStart={onStart} />
       )}
