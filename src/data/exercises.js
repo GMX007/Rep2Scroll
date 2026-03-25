@@ -1431,7 +1431,6 @@ export const equipmentOptions = [
 
 export function getExercisesByTier(tier, userEquipment = []) {
   if (tier === 'free') return exercises.filter(e => FREE_EXERCISE_IDS.includes(e.id));
-  // Standard gets bodyweight + exercises matching their equipment
   const allowedEquipment = ['Bodyweight', ...userEquipment];
   return exercises.filter(e => allowedEquipment.includes(e.equipment));
 }
@@ -1445,6 +1444,24 @@ export function getExercisesByCategory(categoryId, tier = 'standard', userEquipm
   if (!category) return [];
   const pool = getExercisesByTier(tier, userEquipment);
   return pool.filter(e => e.bodyArea.some(area => category.areas.includes(area)));
+}
+
+// Scaling multipliers based on gender and activity level
+const repScaleFactors = {
+  beginner: { male: 0.6,  female: 0.5  },
+  light:    { male: 0.75, female: 0.65 },
+  moderate: { male: 1.0,  female: 0.85 },
+  active:   { male: 1.25, female: 1.1  },
+};
+
+export function getScaledTarget(exercise, gender = 'male', activityLevel = 'moderate') {
+  const base = exercise.defaultTarget;
+  const factor = repScaleFactors[activityLevel]?.[gender] ?? 1.0;
+  const scaled = Math.round(base * factor);
+  if (exercise.type === 'hold') {
+    return Math.max(10, Math.round(scaled / 5) * 5);
+  }
+  return Math.max(3, Math.round(scaled / 2) * 2);
 }
 
 export function getRandomExercise(tier, lastTwo = [], userEquipment = []) {
