@@ -1,10 +1,8 @@
-import useGlobalButtonSounds from './useGlobalButtonSounds';
 import React, { useContext } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AppProvider, AppContext } from './AppContext';
 import NavBar from './components/NavBar';
 import InstallPrompt from './components/InstallPrompt';
-
 // Screens
 import EarnScreen from './screens/EarnScreen';
 import SummaryScreen from './screens/SummaryScreen';
@@ -33,7 +31,6 @@ function AppShell() {
   if (!state.disclaimerAccepted) {
     return <DisclaimerScreen />;
   }
-
   // How-to screen (shown before camera)
   if (state.showHowTo) {
     return (
@@ -43,7 +40,6 @@ function AppShell() {
       />
     );
   }
-
   // Camera overlay (shown over main app)
   if (state.showCamera) {
     return (
@@ -54,41 +50,38 @@ function AppShell() {
       />
     );
   }
-
   // Level up overlay
   if (state.showLevelUp) {
     return <LevelUpScreen />;
   }
+
+  // ← NEW: Time's Up overlay — fires from any screen when scroll timer expires
   if (state.scrollTimeUp) {
-  return (
-    <ScrollingScreen
-      onStop={() => dispatch({ type: 'STOP_SCROLLING' })}
-      minutes={0}
-      forceTimeUp={true}
-    />
-  );
-}
+    return (
+      <ScrollingScreen
+        onStop={() => dispatch({ type: 'STOP_SCROLLING' })}
+        minutes={0}
+        forceTimeUp={true}
+      />
+    );
+  }
 
   // Equipment setup (shown after upgrading to standard)
   if (state.showEquipmentSetup) {
     return <EquipmentScreen />;
   }
-
   // Body part picker overlay (standard tier)
   if (state.showBodyPartPicker) {
     return <BodyPartScreen />;
   }
-
   // Exercise picker overlay (standard tier)
   if (state.showExercisePicker) {
     return <ExercisePickerScreen />;
   }
-
   // Pricing overlay
   if (state.showPricing) {
     return <PricingScreen onClose={() => dispatch({ type: 'DISMISS_PRICING' })} />;
   }
-
   // Legal screens overlay
   if (state.showLegal) {
     return <LegalScreen type={state.showLegal} onClose={() => dispatch({ type: 'DISMISS_LEGAL' })} />;
@@ -115,7 +108,6 @@ function AppShell() {
 }
 
 export default function App() {
-  useGlobalButtonSounds();
   return (
     <BrowserRouter>
       <AppProvider>
@@ -124,3 +116,4 @@ export default function App() {
     </BrowserRouter>
   );
 }
+
