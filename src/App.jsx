@@ -1,3 +1,4 @@
+import useGlobalButtonSounds from './useGlobalButtonSounds';
 import React, { useContext } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AppProvider, AppContext } from './AppContext';
