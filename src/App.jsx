@@ -106,6 +106,7 @@ function AppShell() {
 }
 
 export default function App() {
+  useGlobalButtonSounds();
   return (
     <BrowserRouter>
       <AppProvider>
