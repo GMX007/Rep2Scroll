@@ -59,6 +59,15 @@ function AppShell() {
   if (state.showLevelUp) {
     return <LevelUpScreen />;
   }
+  if (state.scrollTimeUp) {
+  return (
+    <ScrollingScreen
+      onStop={() => dispatch({ type: 'STOP_SCROLLING' })}
+      minutes={0}
+      forceTimeUp={true}
+    />
+  );
+}
 
   // Equipment setup (shown after upgrading to standard)
   if (state.showEquipmentSetup) {
