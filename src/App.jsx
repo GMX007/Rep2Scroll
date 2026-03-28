@@ -2,6 +2,7 @@ import React, { useContext } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AppProvider, AppContext } from './AppContext';
 import NavBar from './components/NavBar';
+import ScrollSessionAwayPopup from './components/ScrollSessionAwayPopup';
 import InstallPrompt from './components/InstallPrompt';
 // Screens
 import EarnScreen from './screens/EarnScreen';
@@ -101,6 +102,7 @@ function AppShell() {
           <Route path="/settings" element={<SettingsScreen />} />
         </Routes>
       </div>
+      <ScrollSessionAwayPopup />
       <NavBar />
       <InstallPrompt />
     </div>

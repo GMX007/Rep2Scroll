@@ -1,13 +1,8 @@
 /**
  * SweatNScroll Exercise Verifier
  * Applies exercise-specific form rules to MoveNet keypoints.
- * Returns form status (green/amber/red) and rep counting.
- *
- * Covers all 17 exercises:
- *   Free:     push-up, squat, plank
- *   Standard: knee-push-up, wide-push-up, diamond-push-up, decline-push-up,
- *             pike-push-up, wall-sit, glute-bridge, glute-bridge-hold, lunge,
- *             burpee, mountain-climber, bicycle-crunch, superman, calf-raise
+ * Every exercise in `exercises.js` maps here (bodyweight + equipment).
+ * Equipment moves use closest pose heuristics (elbow angle, squat, hinge, etc.).
  */
 
 import { getKeypoint, calculateAngle, calculateAlignment } from './poseDetection';
@@ -415,32 +410,53 @@ export function verifyBurpee(pose) {
 }
 
 export function verifyMountainClimber(pose) {
-  const shoulder = getKeypoint(pose, 'left_shoulder');
-  const hip = getKeypoint(pose, 'left_hip');
-  const ankle = getKeypoint(pose, 'left_ankle');
-  const knee = getKeypoint(pose, 'left_knee');
+  const ls = getKeypoint(pose, 'left_shoulder');
+  const rs = getKeypoint(pose, 'right_shoulder');
+  const lh = getKeypoint(pose, 'left_hip');
+  const rh = getKeypoint(pose, 'right_hip');
+  const lk = getKeypoint(pose, 'left_knee');
+  const rk = getKeypoint(pose, 'right_knee');
 
-  if (!visible(shoulder, hip, ankle, knee)) return CANT_SEE;
+  const shoulder = ls && rs
+    ? { x: (ls.x + rs.x) / 2, y: (ls.y + rs.y) / 2 }
+    : ls || rs;
 
-  // Rep counting: knee drive toward chest. Track knee-hip vertical distance
-  const kneeDrive = hip.y - knee.y; // positive = knee is above hip (driven up)
+  if (!visible(shoulder, lh, rh)) return CANT_SEE;
+  if (!lk && !rk) return CANT_SEE;
+
+  // Rep counting: either knee can drive (alternating climbers). hip.y - knee.y is positive
+  // when the knee moves up toward the chest (screen coords, y grows downward).
+  const leftDrive = lk ? lh.y - lk.y : -1e6;
+  const rightDrive = rk ? rh.y - rk.y : -1e6;
+  const kneeDriveMax = Math.max(leftDrive, rightDrive);
 
   let repCompleted = false;
-  if (kneeDrive > 10 && repState.phase === 'up') {
-    repState.phase = 'down'; // knee driven forward
+  const DRIVE_IN = 12;
+  const DRIVE_RESET = 6;
+  if (kneeDriveMax > DRIVE_IN && repState.phase === 'up') {
+    repState.phase = 'down';
   }
-  if (kneeDrive < -10 && repState.phase === 'down') {
-    repState.phase = 'up'; // knee returned
+  if (kneeDriveMax < DRIVE_RESET && repState.phase === 'down') {
+    repState.phase = 'up';
     repCompleted = true;
   }
 
-  // Hip alignment — should stay in plank position
-  const hipDev = calculateAlignment(shoulder, hip, ankle);
-  if (hipDev > 25) {
-    return checkFormBreak({ level: 'red', message: 'Hips too high — stay in plank', repCompleted: false, effortScore: 0 });
+  // Shoulder–hip–ankle straight line breaks whenever one knee is tucked — that falsely
+  // triggered "bad form" and cleared reps. Use mid-hip + vertical reference instead.
+  const midHip = { x: (lh.x + rh.x) / 2, y: (lh.y + rh.y) / 2 };
+  const verticalRef = { x: midHip.x, y: midHip.y + 100 };
+  const torsoStability = calculateAlignment(shoulder, midHip, verticalRef);
+
+  if (torsoStability > 42) {
+    return checkFormBreak({
+      level: 'red',
+      message: 'Keep torso steady — stack shoulders over hips',
+      repCompleted: false,
+      effortScore: 0,
+    });
   }
-  if (hipDev > 15) {
-    return { level: 'amber', message: 'Keep hips level', repCompleted, effortScore: 0.8 };
+  if (torsoStability > 28) {
+    return { level: 'amber', message: 'Brace your core — stay stable', repCompleted, effortScore: 0.8 };
   }
 
   clearFormBreak();
@@ -513,6 +529,166 @@ export function verifyCalfRaise(pose) {
 }
 
 // ─────────────────────────────────────────────
+// EQUIPMENT & SHARED ARM / HINGE HEURISTICS
+// MoveNet does not see weights — reps track visible joint motion only.
+// ─────────────────────────────────────────────
+
+/** Curl / row / pull-up pattern: extended → flexed → extended = 1 rep */
+function verifyElbowFlexCycle(pose, { contractBelow = 95, extendAbove = 145, cantSeeMsg = "Adjust camera — show your arm" } = {}) {
+  const shoulder = getKeypoint(pose, 'left_shoulder');
+  const elbow = getKeypoint(pose, 'left_elbow');
+  const wrist = getKeypoint(pose, 'left_wrist');
+  if (!visible(shoulder, elbow, wrist)) {
+    return { level: 'amber', message: cantSeeMsg, repCompleted: false, effortScore: 0 };
+  }
+  const elbowAngle = calculateAngle(shoulder, elbow, wrist);
+  let repCompleted = false;
+  if (elbowAngle < contractBelow && repState.phase === 'up') {
+    repState.phase = 'down';
+  }
+  if (elbowAngle > extendAbove && repState.phase === 'down') {
+    repState.phase = 'up';
+    repCompleted = true;
+  }
+  clearFormBreak();
+  return { level: 'green', message: 'Good form — keep it up', repCompleted, effortScore: 1 };
+}
+
+/** Tricep kickback: bent → straight → bent = 1 rep */
+function verifyElbowExtensionCycle(pose, { bentBelow = 120, straightAbove = 148 } = {}) {
+  const shoulder = getKeypoint(pose, 'left_shoulder');
+  const elbow = getKeypoint(pose, 'left_elbow');
+  const wrist = getKeypoint(pose, 'left_wrist');
+  if (!visible(shoulder, elbow, wrist)) {
+    return { level: 'amber', message: "Adjust camera — show your working arm", repCompleted: false, effortScore: 0 };
+  }
+  const elbowAngle = calculateAngle(shoulder, elbow, wrist);
+  let repCompleted = false;
+  if (elbowAngle > straightAbove && repState.phase === 'up') {
+    repState.phase = 'down';
+  }
+  if (elbowAngle < bentBelow && repState.phase === 'down') {
+    repState.phase = 'up';
+    repCompleted = true;
+  }
+  clearFormBreak();
+  return { level: 'green', message: 'Good form — keep it up', repCompleted, effortScore: 1 };
+}
+
+/** RDL / KB deadlift / swing: hinge at hip (angle at hip between shoulder–hip–knee) */
+function verifyHipHingeReps(pose, { hingeDeep = 155, hingeTall = 172 } = {}) {
+  const shoulder = getKeypoint(pose, 'left_shoulder');
+  const hip = getKeypoint(pose, 'left_hip');
+  const knee = getKeypoint(pose, 'left_knee');
+  if (!visible(shoulder, hip, knee)) return CANT_SEE;
+  const hipAngle = calculateAngle(shoulder, hip, knee);
+  let repCompleted = false;
+  if (hipAngle < hingeDeep && repState.phase === 'up') {
+    repState.phase = 'down';
+  }
+  if (hipAngle > hingeTall && repState.phase === 'down') {
+    repState.phase = 'up';
+    repCompleted = true;
+  }
+  if (hipAngle < hingeDeep - 25) {
+    return checkFormBreak({ level: 'red', message: 'Keep a flat back — hinge, don’t round', repCompleted: false, effortScore: 0 });
+  }
+  clearFormBreak();
+  return { level: 'green', message: 'Good form — keep it up', repCompleted, effortScore: 1 };
+}
+
+export function verifyDeadHang(pose) {
+  const shoulder = getKeypoint(pose, 'left_shoulder');
+  const elbow = getKeypoint(pose, 'left_elbow');
+  const wrist = getKeypoint(pose, 'left_wrist');
+  if (!visible(shoulder, elbow, wrist)) {
+    return { ...CANT_SEE, holdValid: false };
+  }
+  const elbowAngle = calculateAngle(shoulder, elbow, wrist);
+  if (elbowAngle < 145) {
+    return checkFormBreak({
+      level: 'red',
+      message: 'Arms should stay straight — full hang',
+      repCompleted: false,
+      effortScore: 0,
+      holdValid: false,
+    });
+  }
+  if (elbowAngle < 155) {
+    return { level: 'amber', message: 'Lock elbows out gently', repCompleted: false, effortScore: 0.8, holdValid: true };
+  }
+  clearFormBreak();
+  return { level: 'green', message: 'Good hang — stay steady', repCompleted: false, effortScore: 1, holdValid: true };
+}
+
+export function verifyHangingKneeRaise(pose) {
+  const shoulder = getKeypoint(pose, 'left_shoulder');
+  const hip = getKeypoint(pose, 'left_hip');
+  const knee = getKeypoint(pose, 'left_knee');
+  if (!visible(shoulder, hip, knee)) return CANT_SEE;
+  const drive = hip.y - knee.y;
+  let repCompleted = false;
+  if (drive > 18 && repState.phase === 'up') {
+    repState.phase = 'down';
+  }
+  if (drive < 2 && repState.phase === 'down') {
+    repState.phase = 'up';
+    repCompleted = true;
+  }
+  clearFormBreak();
+  return { level: 'green', message: 'Good form — keep it up', repCompleted, effortScore: 1 };
+}
+
+export function verifyBandPullApart(pose) {
+  const ls = getKeypoint(pose, 'left_shoulder');
+  const rs = getKeypoint(pose, 'right_shoulder');
+  const lw = getKeypoint(pose, 'left_wrist');
+  const rw = getKeypoint(pose, 'right_wrist');
+  if (!visible(ls, rs, lw, rw)) {
+    return { level: 'amber', message: 'Face the camera — arms and shoulders visible', repCompleted: false, effortScore: 0 };
+  }
+  const shoulderW = Math.abs(rs.x - ls.x) || 40;
+  const spread = Math.abs(rw.x - lw.x);
+  const ratio = spread / shoulderW;
+  let repCompleted = false;
+  if (ratio > 1.85 && repState.phase === 'up') {
+    repState.phase = 'down';
+  }
+  if (ratio < 1.4 && repState.phase === 'down') {
+    repState.phase = 'up';
+    repCompleted = true;
+  }
+  clearFormBreak();
+  return { level: 'green', message: 'Good form — keep it up', repCompleted, effortScore: 1 };
+}
+
+/** Side view: wrist rises relative to shoulder when arm abducts */
+export function verifyLateralRaise(pose) {
+  const shoulder = getKeypoint(pose, 'left_shoulder');
+  const wrist = getKeypoint(pose, 'left_wrist');
+  const elbow = getKeypoint(pose, 'left_elbow');
+  if (!visible(shoulder, wrist, elbow)) {
+    return { level: 'amber', message: "Adjust camera — show working arm", repCompleted: false, effortScore: 0 };
+  }
+  const lift = shoulder.y - wrist.y;
+  let repCompleted = false;
+  if (lift > 22 && repState.phase === 'up') {
+    repState.phase = 'down';
+  }
+  if (lift < 6 && repState.phase === 'down') {
+    repState.phase = 'up';
+    repCompleted = true;
+  }
+  clearFormBreak();
+  return { level: 'green', message: 'Good form — keep it up', repCompleted, effortScore: 1 };
+}
+
+/** Full-body flow: counts hip hinge cycles (approximation for TGU) */
+export function verifyTurkishGetupApprox(pose) {
+  return verifyHipHingeReps(pose, { hingeDeep: 140, hingeTall: 165 });
+}
+
+// ─────────────────────────────────────────────
 // MAIN DISPATCHER
 // ─────────────────────────────────────────────
 
@@ -540,14 +716,59 @@ export function verifyExercise(exerciseId, pose) {
     case 'wall-sit':          return verifyWallSit(pose);
     case 'glute-bridge-hold': return verifyGluteBridgeHold(pose);
     case 'superman':          return verifySuperman(pose);
+    case 'dead-hang':         return verifyDeadHang(pose);
 
-    // Rep exercises
+    // Rep exercises — bodyweight
     case 'glute-bridge':      return verifyGluteBridge(pose);
     case 'lunge':             return verifyLunge(pose);
     case 'burpee':            return verifyBurpee(pose);
     case 'mountain-climber':  return verifyMountainClimber(pose);
     case 'bicycle-crunch':    return verifyBicycleCrunch(pose);
     case 'calf-raise':        return verifyCalfRaise(pose);
+    case 'hanging-knee-raise': return verifyHangingKneeRaise(pose);
+
+    // Dumbbells — arm/elbow cycles
+    case 'db-bicep-curl':
+    case 'band-bicep-curl':
+      return verifyElbowFlexCycle(pose, { contractBelow: 78, extendAbove: 142 });
+    case 'db-shoulder-press':
+    case 'kb-press':
+      return verifyElbowFlexCycle(pose, { contractBelow: 100, extendAbove: 152 });
+    case 'db-lateral-raise':
+      return verifyLateralRaise(pose);
+    case 'db-bent-over-row':
+    case 'band-row':
+      return verifyElbowFlexCycle(pose, { contractBelow: 92, extendAbove: 145 });
+    case 'db-tricep-kickback':
+      return verifyElbowExtensionCycle(pose, { bentBelow: 118, straightAbove: 148 });
+    case 'db-chest-press':
+      return verifyElbowFlexCycle(pose, { contractBelow: 98, extendAbove: 148 });
+
+    // Dumbbells / bands / kettlebell — squat & hinge
+    case 'db-goblet-squat':
+    case 'band-squat':
+    case 'kb-goblet-squat':
+      return verifySquat(pose);
+    case 'db-lunges':
+      return verifyLunge(pose);
+    case 'db-romanian-deadlift':
+    case 'kb-deadlift':
+      return verifyHipHingeReps(pose, { hingeDeep: 152, hingeTall: 172 });
+    case 'kb-swing':
+      return verifyHipHingeReps(pose, { hingeDeep: 148, hingeTall: 168 });
+
+    // Pull-up bar — elbow flex (chin clears ≈ sharp elbow angle)
+    case 'pull-up':
+    case 'chin-up':
+      return verifyElbowFlexCycle(pose, { contractBelow: 110, extendAbove: 148 });
+
+    // Resistance band — horizontal spread (front view)
+    case 'band-pull-apart':
+      return verifyBandPullApart(pose);
+
+    // Complex flow — coarse rep count from hip movement
+    case 'kb-turkish-getup':
+      return verifyTurkishGetupApprox(pose);
 
     default:
       return { level: 'green', message: 'Exercise not yet supported by AI', repCompleted: false, effortScore: 1 };

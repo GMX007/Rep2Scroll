@@ -395,6 +395,14 @@ export function AppProvider({ children }) {
       if (Date.now() >= state.scrollEndTime) {
         clearInterval(timerRef.current);
         timerRef.current = null;
+        // User left the main timer (Earn tab): native alert so the expiry is obvious.
+        try {
+          if (typeof window !== 'undefined' && window.location?.pathname !== '/') {
+            window.alert("Time's up! Your scroll session has ended. Come back to earn more.");
+          }
+        } catch {
+          /* ignore */
+        }
         dispatch({ type: 'SCROLL_TIME_UP' });
       }
     };
