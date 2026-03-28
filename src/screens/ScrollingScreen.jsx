@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Button from '../components/Button';
-import { scheduleScrollEndNotification, cancelScrollEndNotification } from '../services/notificationService';
+import { cancelScrollEndNotification } from '../services/notificationService';
 
 function drawScrollPipFrame(ctx, width, height, sec, totalSec) {
   ctx.fillStyle = '#0F1647';
@@ -62,11 +62,6 @@ export default function ScrollingScreen({ onStop, minutes = 0, scrollEndTime = n
   }, [scrollEndTime]);
 
   useEffect(() => {
-    scheduleScrollEndNotification(endTimeRef.current);
-    return () => cancelScrollEndNotification();
-  }, []);
-
-  useEffect(() => {
     // If forceTimeUp is set from outside (global timer fired), go straight to time's up
     if (forceTimeUp) {
       setTimeUp(true);
@@ -107,11 +102,11 @@ export default function ScrollingScreen({ onStop, minutes = 0, scrollEndTime = n
     if (!canvas || !video) return;
 
     if (typeof canvas.captureStream !== 'function') {
-      setPipError('Floating timer needs a browser that supports canvas video (try Chrome on desktop).');
+      setPipError('This phone or browser can’t use a floating timer here. Turn on notifications in Settings for a ping when time is up.');
       return;
     }
     if (typeof video.requestPictureInPicture !== 'function') {
-      setPipError('Picture-in-picture is not supported on this device (common on iPhone). Keep the app open or use another browser.');
+      setPipError('Picture-in-picture isn’t available on this device (normal on many phones). Use notifications instead.');
       return;
     }
 
@@ -151,7 +146,7 @@ export default function ScrollingScreen({ onStop, minutes = 0, scrollEndTime = n
       pipAnimRef.current = requestAnimationFrame(loop);
     } catch (err) {
       console.warn('[SweatNScroll] PiP failed:', err);
-      setPipError(err?.message || 'Could not open floating timer. Try Chrome/Edge on desktop, or keep this tab visible.');
+      setPipError(err?.message || 'Couldn’t open floating timer. Allow picture-in-picture if prompted, or rely on your notification when time is up.');
       setPipActive(false);
       if (pipAnimRef.current) {
         cancelAnimationFrame(pipAnimRef.current);
@@ -266,7 +261,7 @@ export default function ScrollingScreen({ onStop, minutes = 0, scrollEndTime = n
               {'🚀'} Go Scroll — Floating Timer
             </Button>
             <div style={styles.pipHint}>
-              Works best in Chrome or Edge on desktop. Tap the button, then allow picture-in-picture if asked.
+              Optional — only some phones (often Android) support a tiny timer over other apps. Enable notifications in Settings for the reliable reminder.
             </div>
             {pipError && (
               <div style={styles.pipError} role="alert">
@@ -278,7 +273,7 @@ export default function ScrollingScreen({ onStop, minutes = 0, scrollEndTime = n
 
         {!pipSupported && (
           <div style={{ ...styles.pipHint, marginTop: 24, maxWidth: 300, marginLeft: 'auto', marginRight: 'auto' }}>
-            Floating timer (picture-in-picture) is not available in this browser — especially on many phones. Keep this tab open; you&apos;ll still get a notification and alert when time is up.
+            Floating timer isn&apos;t available here — that&apos;s normal on most phones. Turn on notifications in Settings so you get pinged when scroll time ends.
           </div>
         )}
 
@@ -289,7 +284,7 @@ export default function ScrollingScreen({ onStop, minutes = 0, scrollEndTime = n
               Floating timer active!
             </div>
             <div style={{ fontSize: 12, color: '#9AA0B8', marginTop: 4 }}>
-              Go use your phone — the timer will stay on screen
+              You can switch apps — keep an eye on the mini timer if your phone allows it
             </div>
           </div>
         )}

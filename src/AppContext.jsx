@@ -2,6 +2,12 @@ import React, { createContext, useReducer, useEffect, useRef } from 'react';
 import { getRandomExercise, getRandomExerciseByCategory, exercises } from './data/exercises';
 import { getLevelForXP } from './data/levels';
 import { DAILY_CAP_MINUTES, GRACE_PERIOD_SECONDS, earningRates } from './theme/tokens';
+import {
+  scheduleScrollEndNotification,
+  cancelScrollEndNotification,
+  vibrateScrollTimeUp,
+  showScrollTimeUpPageNotification,
+} from './services/notificationService';
 
 /**
  * SweatNScroll App State Management
@@ -384,6 +390,18 @@ export function AppProvider({ children }) {
     }
   }, [state.onboardingComplete, state.disclaimerAccepted, state.showEquipmentSetup]);
 
+  // Schedule SW notification for scroll end (survives tab backgrounding; do not tie to ScrollingScreen mount).
+  useEffect(() => {
+    if (!state.isScrolling || !state.scrollEndTime || state.scrollTimeUp) {
+      cancelScrollEndNotification();
+      return;
+    }
+    scheduleScrollEndNotification(state.scrollEndTime);
+    return () => {
+      cancelScrollEndNotification();
+    };
+  }, [state.isScrolling, state.scrollEndTime, state.scrollTimeUp]);
+
   // ─── Global scroll timer ───────────────────────────────────────────────────
   // Runs at the AppProvider level so it keeps ticking regardless of which
   // screen the user is on. When time expires it dispatches SCROLL_TIME_UP
@@ -410,19 +428,25 @@ export function AppProvider({ children }) {
         timerRef.current = null;
       }
 
-      // Always notify (most users stay on / during scroll — pathname-only alert never fired).
-      try {
-        if (typeof window !== 'undefined') {
-          window.setTimeout(() => {
-            try {
-              window.alert("Time's up! Your scroll session has ended. Come back to earn more.");
-            } catch {
-              /* ignore */
-            }
-          }, 0);
+      cancelScrollEndNotification();
+      vibrateScrollTimeUp();
+
+      // Foreground only — background tabs freeze JS; user gets the SW notification instead.
+      if (typeof document !== 'undefined' && !document.hidden) {
+        showScrollTimeUpPageNotification();
+        try {
+          if (typeof window !== 'undefined') {
+            window.setTimeout(() => {
+              try {
+                window.alert("Time's up! Your scroll session has ended. Come back to earn more.");
+              } catch {
+                /* ignore */
+              }
+            }, 0);
+          }
+        } catch {
+          /* ignore */
         }
-      } catch {
-        /* ignore */
       }
 
       dispatch({ type: 'SCROLL_TIME_UP' });
