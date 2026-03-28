@@ -2,6 +2,43 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Button from '../components/Button';
 import { scheduleScrollEndNotification, cancelScrollEndNotification } from '../services/notificationService';
 
+function drawScrollPipFrame(ctx, width, height, sec, totalSec) {
+  ctx.fillStyle = '#0F1647';
+  ctx.fillRect(0, 0, width, height);
+
+  ctx.fillStyle = 'rgba(255,255,255,0.1)';
+  ctx.fillRect(20, 140, 260, 16);
+
+  const pct = totalSec > 0 ? Math.min(1, sec / totalSec) : 0;
+  const grad = ctx.createLinearGradient(20, 0, 280, 0);
+  grad.addColorStop(0, '#2ECC71');
+  grad.addColorStop(1, '#27AE60');
+  ctx.fillStyle = grad;
+  ctx.fillRect(20, 140, Math.max(0, 260 * pct), 16);
+
+  ctx.fillStyle = '#2ECC71';
+  ctx.font = '600 14px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('SCROLL TIME LEFT', width / 2, 35);
+
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  const timeStr = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  ctx.fillStyle = '#F4F1EB';
+  ctx.font = '700 72px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(timeStr, width / 2, 115);
+
+  if (sec <= 0) {
+    ctx.fillStyle = 'rgba(15,22,71,0.85)';
+    ctx.fillRect(0, 0, width, height);
+    ctx.fillStyle = '#E8533A';
+    ctx.font = '700 36px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText("TIME'S UP!", width / 2, 100);
+  }
+}
+
 export default function ScrollingScreen({ onStop, minutes = 0, scrollEndTime = null, forceTimeUp = false }) {
   const totalSeconds = Math.floor(minutes * 60);
   const endTimeRef = useRef(scrollEndTime || Date.now() + totalSeconds * 1000);
@@ -9,6 +46,7 @@ export default function ScrollingScreen({ onStop, minutes = 0, scrollEndTime = n
   const [remaining, setRemaining] = useState(computedRemaining);
   const [timeUp, setTimeUp] = useState(forceTimeUp || computedRemaining <= 0);
   const [pipActive, setPipActive] = useState(false);
+  const [pipError, setPipError] = useState(null);
 
   const canvasRef = useRef(null);
   const videoRef = useRef(null);
@@ -16,6 +54,12 @@ export default function ScrollingScreen({ onStop, minutes = 0, scrollEndTime = n
   const remainingRef = useRef(remaining);
 
   useEffect(() => { remainingRef.current = remaining; }, [remaining]);
+
+  useEffect(() => {
+    if (scrollEndTime != null) {
+      endTimeRef.current = scrollEndTime;
+    }
+  }, [scrollEndTime]);
 
   useEffect(() => {
     scheduleScrollEndNotification(endTimeRef.current);
@@ -56,71 +100,65 @@ export default function ScrollingScreen({ onStop, minutes = 0, scrollEndTime = n
     };
   }, [forceTimeUp]);
 
-  const drawPipCanvas = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    const sec = remainingRef.current;
-    const m = Math.floor(sec / 60);
-    const s = sec % 60;
-    const timeStr = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-    const pct = totalSeconds > 0 ? sec / totalSeconds : 0;
-
-    ctx.fillStyle = '#0F1647';
-    ctx.fillRect(0, 0, 300, 180);
-
-    ctx.fillStyle = 'rgba(255,255,255,0.1)';
-    ctx.beginPath();
-    ctx.roundRect(20, 140, 260, 16, 8);
-    ctx.fill();
-
-    const grad = ctx.createLinearGradient(20, 0, 280, 0);
-    grad.addColorStop(0, '#2ECC71');
-    grad.addColorStop(1, '#27AE60');
-    ctx.fillStyle = grad;
-    ctx.beginPath();
-    ctx.roundRect(20, 140, Math.max(0, 260 * pct), 16, 8);
-    ctx.fill();
-
-    ctx.fillStyle = '#2ECC71';
-    ctx.font = '600 14px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('SCROLL TIME LEFT', 150, 35);
-
-    ctx.fillStyle = '#F4F1EB';
-    ctx.font = '700 72px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(timeStr, 150, 115);
-
-    if (sec <= 0) {
-      ctx.fillStyle = 'rgba(15,22,71,0.85)';
-      ctx.fillRect(0, 0, 300, 180);
-      ctx.fillStyle = '#E8533A';
-      ctx.font = '700 36px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText("TIME'S UP!", 150, 100);
-    }
-
-    pipAnimRef.current = requestAnimationFrame(drawPipCanvas);
-  }, [totalSeconds]);
-
   const startPip = useCallback(async () => {
-    try {
-      const canvas = canvasRef.current;
-      const video = videoRef.current;
-      if (!canvas || !video) return;
-      drawPipCanvas();
-      const stream = canvas.captureStream(10);
-      video.srcObject = stream;
-      await video.play();
-      if (video.requestPictureInPicture) {
-        await video.requestPictureInPicture();
-        setPipActive(true);
-      }
-    } catch (err) {
-      console.warn('[SweatNScroll] PiP not supported:', err.message);
+    setPipError(null);
+    const canvas = canvasRef.current;
+    const video = videoRef.current;
+    if (!canvas || !video) return;
+
+    if (typeof canvas.captureStream !== 'function') {
+      setPipError('Floating timer needs a browser that supports canvas video (try Chrome on desktop).');
+      return;
     }
-  }, [drawPipCanvas]);
+    if (typeof video.requestPictureInPicture !== 'function') {
+      setPipError('Picture-in-picture is not supported on this device (common on iPhone). Keep the app open or use another browser.');
+      return;
+    }
+
+    try {
+      if (pipAnimRef.current) {
+        cancelAnimationFrame(pipAnimRef.current);
+        pipAnimRef.current = null;
+      }
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        setPipError('Could not draw timer.');
+        return;
+      }
+      drawScrollPipFrame(ctx, canvas.width, canvas.height, remainingRef.current, totalSeconds);
+
+      const stream = canvas.captureStream(30);
+      video.srcObject = stream;
+      video.muted = true;
+      video.playsInline = true;
+      video.setAttribute('width', String(canvas.width));
+      video.setAttribute('height', String(canvas.height));
+      // Start play without awaiting first — PiP must be requested in the same user-gesture turn as the button click.
+      const playPromise = video.play();
+      await video.requestPictureInPicture();
+      setPipActive(true);
+      await playPromise;
+
+      const loop = () => {
+        const c = canvasRef.current;
+        const cctx = c?.getContext('2d');
+        if (c && cctx) {
+          drawScrollPipFrame(cctx, c.width, c.height, remainingRef.current, totalSeconds);
+        }
+        pipAnimRef.current = requestAnimationFrame(loop);
+      };
+      pipAnimRef.current = requestAnimationFrame(loop);
+    } catch (err) {
+      console.warn('[SweatNScroll] PiP failed:', err);
+      setPipError(err?.message || 'Could not open floating timer. Try Chrome/Edge on desktop, or keep this tab visible.');
+      setPipActive(false);
+      if (pipAnimRef.current) {
+        cancelAnimationFrame(pipAnimRef.current);
+        pipAnimRef.current = null;
+      }
+    }
+  }, [totalSeconds]);
 
   useEffect(() => {
     return () => {
@@ -146,7 +184,12 @@ export default function ScrollingScreen({ onStop, minutes = 0, scrollEndTime = n
   const secs = remaining % 60;
   const originalDuration = totalSeconds > 0 ? totalSeconds : Math.max(1, Math.round((endTimeRef.current - (Date.now() - remaining * 1000)) / 1000));
   const progress = originalDuration > 0 ? remaining / originalDuration : 0;
-  const pipSupported = typeof document !== 'undefined' && 'pictureInPictureEnabled' in document;
+  const pipSupported =
+    typeof document !== 'undefined' &&
+    typeof HTMLCanvasElement !== 'undefined' &&
+    typeof HTMLCanvasElement.prototype.captureStream === 'function' &&
+    typeof HTMLVideoElement !== 'undefined' &&
+    typeof HTMLVideoElement.prototype.requestPictureInPicture === 'function';
 
   if (timeUp) {
     return (
@@ -174,8 +217,15 @@ export default function ScrollingScreen({ onStop, minutes = 0, scrollEndTime = n
   return (
     <div style={styles.screen}>
       <div style={styles.glow} />
-      <canvas ref={canvasRef} width={300} height={180} style={{ display: 'none' }} />
-      <video ref={videoRef} playsInline muted style={{ width: 0, height: 0, position: 'absolute' }} />
+      <canvas ref={canvasRef} width={300} height={180} style={{ display: 'none' }} aria-hidden />
+      <video
+        ref={videoRef}
+        playsInline
+        muted
+        width={300}
+        height={180}
+        style={{ position: 'absolute', width: 1, height: 1, opacity: 0, pointerEvents: 'none', left: 0, top: 0 }}
+      />
 
       <div style={styles.content}>
         <div style={styles.label}>Scroll Time Left</div>
@@ -216,8 +266,19 @@ export default function ScrollingScreen({ onStop, minutes = 0, scrollEndTime = n
               {'🚀'} Go Scroll — Floating Timer
             </Button>
             <div style={styles.pipHint}>
-              Opens a mini timer that stays on your screen while you use other apps
+              Works best in Chrome or Edge on desktop. Tap the button, then allow picture-in-picture if asked.
             </div>
+            {pipError && (
+              <div style={styles.pipError} role="alert">
+                {pipError}
+              </div>
+            )}
+          </div>
+        )}
+
+        {!pipSupported && (
+          <div style={{ ...styles.pipHint, marginTop: 24, maxWidth: 300, marginLeft: 'auto', marginRight: 'auto' }}>
+            Floating timer (picture-in-picture) is not available in this browser — especially on many phones. Keep this tab open; you&apos;ll still get a notification and alert when time is up.
           </div>
         )}
 
@@ -233,7 +294,7 @@ export default function ScrollingScreen({ onStop, minutes = 0, scrollEndTime = n
           </div>
         )}
 
-        <div style={{ marginTop: pipActive || !pipSupported ? 24 : 12 }}>
+        <div style={{ marginTop: pipActive || !pipSupported || pipError ? 24 : 12 }}>
           <Button variant="secondary" onClick={onStop}>
             Back to Exercise →
           </Button>
@@ -309,6 +370,17 @@ const styles = {
     color: '#9AA0B8',
     marginTop: 8,
     lineHeight: 1.4,
+  },
+  pipError: {
+    marginTop: 12,
+    padding: '10px 12px',
+    fontSize: 12,
+    color: '#F4F1EB',
+    background: 'rgba(232,83,58,0.2)',
+    border: '1px solid rgba(232,83,58,0.4)',
+    borderRadius: 12,
+    lineHeight: 1.45,
+    textAlign: 'left',
   },
   pipActiveCard: {
     margin: '24px auto 0',

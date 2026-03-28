@@ -367,6 +367,12 @@ export const AppContext = createContext();
 export function AppProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, null, loadState);
   const timerRef = useRef(null);
+  /** Latest end time for interval callback (avoids stale closure). */
+  const scrollEndTimeRef = useRef(null);
+  /** Prevents double alert / double SCROLL_TIME_UP if check runs twice same ms. */
+  const scrollExpiryHandledRef = useRef(false);
+
+  scrollEndTimeRef.current = state.scrollEndTime;
 
   useEffect(() => {
     saveState(state);
@@ -391,26 +397,40 @@ export function AppProvider({ children }) {
 
     if (!state.isScrolling || !state.scrollEndTime || state.scrollTimeUp) return;
 
+    scrollExpiryHandledRef.current = false;
+
     const check = () => {
-      if (Date.now() >= state.scrollEndTime) {
+      const end = scrollEndTimeRef.current;
+      if (end == null || scrollExpiryHandledRef.current) return;
+      if (Date.now() < end) return;
+
+      scrollExpiryHandledRef.current = true;
+      if (timerRef.current) {
         clearInterval(timerRef.current);
         timerRef.current = null;
-        // User left the main timer (Earn tab): native alert so the expiry is obvious.
-        try {
-          if (typeof window !== 'undefined' && window.location?.pathname !== '/') {
-            window.alert("Time's up! Your scroll session has ended. Come back to earn more.");
-          }
-        } catch {
-          /* ignore */
-        }
-        dispatch({ type: 'SCROLL_TIME_UP' });
       }
+
+      // Always notify (most users stay on / during scroll — pathname-only alert never fired).
+      try {
+        if (typeof window !== 'undefined') {
+          window.setTimeout(() => {
+            try {
+              window.alert("Time's up! Your scroll session has ended. Come back to earn more.");
+            } catch {
+              /* ignore */
+            }
+          }, 0);
+        }
+      } catch {
+        /* ignore */
+      }
+
+      dispatch({ type: 'SCROLL_TIME_UP' });
     };
 
-    check(); // check immediately in case we're already past end time
+    check();
     timerRef.current = setInterval(check, 1000);
 
-    // Also re-check when user comes back to the tab
     const handleVisibility = () => {
       if (!document.hidden) check();
     };
