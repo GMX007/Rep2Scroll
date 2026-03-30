@@ -7,6 +7,30 @@ import FormIndicator from '../components/FormIndicator';
 import Button from '../components/Button';
 import { getScaledTarget } from '../data/exercises';
 
+function getQuickFixes(exercise, issueMessage = '') {
+  const issue = (issueMessage || '').toLowerCase();
+  const quick = [];
+
+  // Start with issue-specific fixes so users can tap exactly what to correct.
+  if (issue.includes('hip')) quick.push('Brace core + squeeze glutes');
+  if (issue.includes('knee')) quick.push('Track knees in line with toes');
+  if (issue.includes('chest')) quick.push('Keep chest tall, eyes forward');
+  if (issue.includes('lean')) quick.push('Stack shoulders over hips');
+  if (issue.includes('deeper')) quick.push('Use full range — go deeper');
+  if (issue.includes('camera')) quick.push('Step back and keep full body in frame');
+
+  // Fill with exercise-specific points.
+  const fromFormPoints = (exercise?.formPoints || []).slice(0, 4);
+  for (const point of fromFormPoints) {
+    if (quick.length >= 5) break;
+    if (!quick.includes(point)) quick.push(point);
+  }
+
+  // Final fallback.
+  if (quick.length === 0) quick.push('Slow down and keep control on each rep');
+  return quick.slice(0, 5);
+}
+
 /**
  * Live camera exercise screen with real-time pose detection.
  * Camera feed as background, overlay with rep counter & form indicator.
@@ -26,7 +50,10 @@ export default function CameraScreen({ exercise, onComplete, onSwitchExercise })
   const [paused, setPaused] = useState(false);
   const [muted, setMuted] = useState(!state.settings?.audioEnabled);
   const [countdown, setCountdown] = useState(5);
+  const [lastFlagMessage, setLastFlagMessage] = useState('Form breaking down');
+  const [selectedFix, setSelectedFix] = useState('');
   const lastFormLevel = useRef('green');
+  const targetCelebratedRef = useRef(false);
 
   const isHold = exercise?.type === 'hold';
   const target = getScaledTarget(exercise, state.gender, state.activityLevel);
@@ -65,6 +92,10 @@ export default function CameraScreen({ exercise, onComplete, onSwitchExercise })
       .catch(() => setFormStatus({ level: 'amber', message: 'AI model loading failed — try refreshing' }));
     resetRepState();
   }, []);
+
+  useEffect(() => {
+    targetCelebratedRef.current = false;
+  }, [exercise?.id, target, isHold]);
 
   // 5-second positioning countdown
   useEffect(() => {
@@ -111,14 +142,18 @@ export default function CameraScreen({ exercise, onComplete, onSwitchExercise })
         if (!muted && result.level === 'red' && lastFormLevel.current !== 'red') {
           playFormWarning();
         }
+        if (result.level === 'red' || result.level === 'amber' || result.level === 'pause') {
+          setLastFlagMessage(result.message || 'Form breaking down');
+        }
         lastFormLevel.current = result.level;
 
         if (isHold && result.holdValid) {
           setHoldTime(prev => {
             const newTime = prev + (1 / 10);
-            if (newTime >= target) {
+            if (newTime >= target && !targetCelebratedRef.current) {
+              targetCelebratedRef.current = true;
               if (!muted) playSetComplete();
-              onComplete?.({ holdTime: target, formScore: 100 });
+              setFormStatus({ level: 'green', message: 'Target achieved! Keep going! 🎉' });
             }
             return newTime;
           });
@@ -127,9 +162,10 @@ export default function CameraScreen({ exercise, onComplete, onSwitchExercise })
         if (!isHold && result.repCompleted) {
           setReps(prev => {
             const newReps = prev + 1;
-            if (newReps >= target) {
+            if (newReps >= target && !targetCelebratedRef.current) {
+              targetCelebratedRef.current = true;
               if (!muted) playSetComplete();
-              onComplete?.({ reps: target, formScore: result.effortScore * 100 });
+              setFormStatus({ level: 'green', message: 'Target achieved! Keep pushing! 🔥' });
             } else {
               if (!muted) playRepComplete();
             }
@@ -190,7 +226,7 @@ export default function CameraScreen({ exercise, onComplete, onSwitchExercise })
         <div style={styles.miniBar}>
           <div style={{
             ...styles.miniBarFill,
-            width: `${((isHold ? holdTime : reps) / target) * 100}%`,
+            width: `${Math.min(100, ((isHold ? holdTime : reps) / target) * 100)}%`,
           }} />
         </div>
 
@@ -221,9 +257,33 @@ export default function CameraScreen({ exercise, onComplete, onSwitchExercise })
                 Your form is breaking down — that means you're working hard.
               </div>
               <div style={{ fontSize: 12, color: '#9AA0B8' }}>
-                Hips detected dropping below safe range on last 3 reps
+                {lastFlagMessage || formStatus.message}
               </div>
             </div>
+
+            <div style={{ fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', color: '#9AA0B8', marginBottom: 10, marginTop: 18 }}>
+              Tap a fix
+            </div>
+            <div style={styles.fixGrid}>
+              {getQuickFixes(exercise, lastFlagMessage || formStatus.message).map((fix) => (
+                <button
+                  key={fix}
+                  type="button"
+                  onClick={() => setSelectedFix(fix)}
+                  style={{
+                    ...styles.fixChip,
+                    ...(selectedFix === fix ? styles.fixChipActive : {}),
+                  }}
+                >
+                  {fix}
+                </button>
+              ))}
+            </div>
+            {selectedFix && (
+              <div style={styles.fixSelected}>
+                Focus cue: {selectedFix}
+              </div>
+            )}
 
             {exercise?.easierVariation && (
               <>
@@ -241,6 +301,7 @@ export default function CameraScreen({ exercise, onComplete, onSwitchExercise })
                 </div>
                 <Button onClick={() => {
                   setPaused(false);
+                  setSelectedFix('');
                   resetRepState();
                   onSwitchExercise?.(exercise.easierVariation);
                 }}>
@@ -250,7 +311,7 @@ export default function CameraScreen({ exercise, onComplete, onSwitchExercise })
             )}
 
             <div style={{ marginTop: 8 }}>
-              <Button variant="secondary" onClick={() => { setPaused(false); resetRepState(); }}>
+              <Button variant="secondary" onClick={() => { setPaused(false); setSelectedFix(''); resetRepState(); }}>
                 Try Again
               </Button>
             </div>
@@ -434,6 +495,33 @@ const styles = {
     alignItems: 'center',
     gap: 12,
     marginBottom: 12,
+  },
+  fixGrid: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 8,
+  },
+  fixChip: {
+    background: 'rgba(255,255,255,0.04)',
+    border: '1px solid rgba(255,255,255,0.14)',
+    color: '#F4F1EB',
+    borderRadius: 999,
+    padding: '8px 12px',
+    fontSize: 11,
+    cursor: 'pointer',
+    fontFamily: "'DM Sans', sans-serif",
+    textAlign: 'left',
+  },
+  fixChipActive: {
+    background: 'rgba(46,204,113,0.14)',
+    borderColor: 'rgba(46,204,113,0.45)',
+    color: '#2ECC71',
+  },
+  fixSelected: {
+    fontSize: 12,
+    color: '#2ECC71',
+    marginBottom: 10,
   },
   endSetBtn: {
     marginTop: 12,
