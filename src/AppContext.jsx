@@ -191,7 +191,7 @@ function reducer(state, action) {
       return { ...state, showHowTo: false, showCamera: true };
 
     case 'COMPLETE_EXERCISE': {
-      const { reps = 0, holdTime = 0, formScore = 100 } = action.payload;
+      const { reps = 0, holdTime = 0, formScore = 100, topNote = null } = action.payload;
       const minutesEarned = Math.min(
         calculateMinutesEarned(state.currentExercise, reps, holdTime),
         DAILY_CAP_MINUTES - state.earnedMinutes
@@ -243,7 +243,7 @@ function reducer(state, action) {
           flaggedReps: reps - Math.round(reps * (formScore / 100)),
           formScore: Math.round(formScore),
           personalBest: isPersonalBest,
-          topNote: formScore < 90 ? 'Minor form issues' : null,
+          topNote: topNote || (formScore < 90 ? 'Minor form issues' : null),
           minutesEarned: Math.round(minutesEarned * 10) / 10,
           totalPossible: DAILY_CAP_MINUTES - state.earnedMinutes,
         },

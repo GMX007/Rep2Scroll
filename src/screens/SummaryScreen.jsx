@@ -1,10 +1,23 @@
-import React, { useContext } from 'react';
+import React, { useContext, useMemo, useState } from 'react';
 import Button from '../components/Button';
 import { AppContext } from '../AppContext';
+
+function getTipOptions(note = '') {
+  const n = (note || '').toLowerCase();
+  const tips = [];
+  if (n.includes('hip')) tips.push('Brace core and squeeze glutes');
+  if (n.includes('knee')) tips.push('Track knees over toes');
+  if (n.includes('lean')) tips.push('Keep chest tall and shoulders stacked');
+  if (n.includes('depth') || n.includes('deeper')) tips.push('Use full depth each rep');
+  if (n.includes('camera')) tips.push('Step back and keep full body in frame');
+  tips.push('Slow down and keep control');
+  return [...new Set(tips)].slice(0, 4);
+}
 
 export default function SummaryScreen() {
   const { state, dispatch } = useContext(AppContext);
   const { lastSession } = state;
+  const [selectedTip, setSelectedTip] = useState('');
 
   const session = lastSession || {
     exercise: 'Push-up',
@@ -16,6 +29,11 @@ export default function SummaryScreen() {
     minutesEarned: 4,
     totalPossible: 20,
   };
+
+  const tipOptions = useMemo(() => getTipOptions(session.topNote), [session.topNote]);
+  const dynamicTip = session.topNote
+    ? `Form tip: ${session.topNote}`
+    : 'Form tip: Great form overall — keep your pace and control.';
 
   return (
     <div style={styles.screen}>
@@ -72,8 +90,24 @@ export default function SummaryScreen() {
 
       {/* Form tip */}
       <div style={styles.formTip}>
-        {'💡'} Form tip: Engage your core to keep hips level at the bottom
+        {'💡'} {dynamicTip}
       </div>
+      <div style={styles.tipButtons}>
+        {tipOptions.map((tip) => (
+          <button
+            key={tip}
+            type="button"
+            onClick={() => setSelectedTip(tip)}
+            style={{
+              ...styles.tipBtn,
+              ...(selectedTip === tip ? styles.tipBtnActive : {}),
+            }}
+          >
+            {tip}
+          </button>
+        ))}
+      </div>
+      {selectedTip && <div style={styles.tipSelected}>Focus next set: {selectedTip}</div>}
 
       {/* CTAs */}
       <div style={{ marginTop: 4 }}>
@@ -197,5 +231,31 @@ const styles = {
     padding: '10px 14px',
     fontSize: 12,
     color: 'rgba(46,204,113,0.9)',
+  },
+  tipButtons: {
+    margin: '8px 20px 4px',
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  tipBtn: {
+    background: 'rgba(255,255,255,0.04)',
+    border: '1px solid rgba(255,255,255,0.12)',
+    borderRadius: 999,
+    color: '#F4F1EB',
+    fontSize: 11,
+    padding: '8px 12px',
+    cursor: 'pointer',
+    fontFamily: "'DM Sans', sans-serif",
+  },
+  tipBtnActive: {
+    background: 'rgba(46,204,113,0.14)',
+    borderColor: 'rgba(46,204,113,0.4)',
+    color: '#2ECC71',
+  },
+  tipSelected: {
+    margin: '4px 20px 10px',
+    fontSize: 12,
+    color: '#2ECC71',
   },
 };

@@ -55,6 +55,17 @@ export default function CameraScreen({ exercise, onComplete, onSwitchExercise })
   const lastFormLevel = useRef('green');
   const targetCelebratedRef = useRef(false);
 
+  const completeSession = useCallback((payload = {}) => {
+    const formNote = lastFlagMessage && !/get ready/i.test(lastFlagMessage) ? lastFlagMessage : null;
+    onComplete?.({
+      reps,
+      holdTime,
+      formScore: 80,
+      topNote: formNote,
+      ...payload,
+    });
+  }, [reps, holdTime, lastFlagMessage, onComplete]);
+
   const isHold = exercise?.type === 'hold';
   const target = getScaledTarget(exercise, state.gender, state.activityLevel);
 
@@ -315,7 +326,7 @@ export default function CameraScreen({ exercise, onComplete, onSwitchExercise })
                 Try Again
               </Button>
             </div>
-            <button onClick={() => onComplete?.({ reps, holdTime, formScore: 0 })} style={styles.endSetBtn}>
+            <button onClick={() => completeSession({ formScore: 0 })} style={styles.endSetBtn}>
               End Set
             </button>
           </div>
@@ -349,7 +360,7 @@ export default function CameraScreen({ exercise, onComplete, onSwitchExercise })
         {muted ? '🔇' : '🔊'}
       </button>
 
-      <button onClick={() => onComplete?.({ reps, holdTime, formScore: 80 })} style={styles.endBtn}>
+      <button onClick={() => completeSession({ formScore: 80 })} style={styles.endBtn}>
         End Session
       </button>
     </div>
