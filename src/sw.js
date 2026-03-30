@@ -47,21 +47,28 @@ self.addEventListener('message', (event) => {
 
   if (event.data.type === 'SCHEDULE_SCROLL_NOTIFICATION') {
     const { endTime } = event.data;
+    if (typeof endTime !== 'number' || !Number.isFinite(endTime)) return;
+
     const delay = Math.max(0, endTime - Date.now());
 
     // Clear any existing timer
     if (notificationTimer) clearTimeout(notificationTimer);
 
     notificationTimer = setTimeout(() => {
-      self.registration.showNotification("Time's up! ⏰ Back to work!", {
-        body: "Your scroll time just ran out. Come back and sweat for more! 💪",
-        icon: '/icons/icon-192.png',
-        badge: '/icons/icon-192.png',
-        tag: 'scroll-timer',
-        requireInteraction: true,
-        vibrate: [200, 100, 200],
-        data: { url: '/' },
-      });
+      notificationTimer = null;
+      try {
+        self.registration.showNotification("Time's up! ⏰ Back to work!", {
+          body: "Your scroll time just ran out. Come back and sweat for more! 💪",
+          icon: '/favicon.svg',
+          tag: 'scroll-timer',
+          renotify: true,
+          requireInteraction: true,
+          vibrate: [200, 100, 200],
+          data: { url: '/' },
+        });
+      } catch (e) {
+        console.error('[SweatNScroll SW] showNotification failed:', e);
+      }
     }, delay);
   }
 

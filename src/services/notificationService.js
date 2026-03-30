@@ -17,21 +17,41 @@ export async function requestNotificationPermission() {
 }
 
 /**
+ * Post to whichever worker is available (active first; installing during first visit).
+ */
+function postToServiceWorker(reg, data) {
+  const worker = reg.active || reg.waiting || reg.installing;
+  if (worker) {
+    worker.postMessage(data);
+    return true;
+  }
+  return false;
+}
+
+/**
  * Schedule a notification via the service worker when scroll time expires.
- * Uses `registration.active` — `navigator.serviceWorker.controller` is often null
- * on first load, which previously meant the timer never got scheduled on phones.
+ * Survives tab backgrounding; SW uses setTimeout to call showNotification at endTime.
  * @param {number} endTime - Unix ms timestamp when scrolling ends
  */
 export async function scheduleScrollEndNotification(endTime) {
   if (!('serviceWorker' in navigator)) return;
+  if (typeof endTime !== 'number' || !Number.isFinite(endTime)) return;
 
   const permitted = await requestNotificationPermission();
   if (!permitted) return;
 
+  const payload = { type: 'SCHEDULE_SCROLL_NOTIFICATION', endTime };
+
   try {
     const reg = await navigator.serviceWorker.ready;
-    if (reg.active) {
-      reg.active.postMessage({ type: 'SCHEDULE_SCROLL_NOTIFICATION', endTime });
+    if (postToServiceWorker(reg, payload)) return;
+
+    // Rare: ready resolved but no worker handle yet — retry briefly (mobile first paint).
+    for (let i = 0; i < 15; i += 1) {
+      await new Promise((r) => setTimeout(r, 200));
+      if (postToServiceWorker(reg, payload)) return;
+      const again = await navigator.serviceWorker.getRegistration();
+      if (again && postToServiceWorker(again, payload)) return;
     }
   } catch {
     /* ignore */
@@ -43,11 +63,10 @@ export async function scheduleScrollEndNotification(endTime) {
  */
 export function cancelScrollEndNotification() {
   if (!('serviceWorker' in navigator)) return;
+  const payload = { type: 'CANCEL_SCROLL_NOTIFICATION' };
   navigator.serviceWorker.ready
     .then((reg) => {
-      if (reg.active) {
-        reg.active.postMessage({ type: 'CANCEL_SCROLL_NOTIFICATION' });
-      }
+      postToServiceWorker(reg, payload);
     })
     .catch(() => {});
 }

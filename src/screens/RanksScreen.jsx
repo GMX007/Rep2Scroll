@@ -1,39 +1,81 @@
-import React, { useContext, useState, useMemo } from 'react';
+import React, { useContext, useState, useMemo, useEffect } from 'react';
 import { AppContext } from '../AppContext';
 import { getLevelForXP } from '../data/levels';
+import { fetchLeaderboardProfiles, isSocialBackendConfigured } from '../services/socialService';
 
-// Simulated leaderboard data — in production this comes from a backend.
-// Each user has allTimeReps and weeklyReps so tabs can filter/sort differently.
-const simulatedUsers = [
-  { name: 'IronMike', xp: 20000, allTimeReps: 14520, weeklyReps: 310, streak: 89, isFriend: false },
-  { name: 'SweatQueen', xp: 12000, allTimeReps: 12340, weeklyReps: 420, streak: 72, isFriend: true },
-  { name: 'RepKing', xp: 8000, allTimeReps: 10890, weeklyReps: 280, streak: 61, isFriend: false },
-  { name: 'CoreCrusher', xp: 5500, allTimeReps: 9200, weeklyReps: 195, streak: 54, isFriend: true },
-  { name: 'PlankMaster', xp: 3500, allTimeReps: 7600, weeklyReps: 350, streak: 45, isFriend: false },
-  { name: 'GainzGuru', xp: 2000, allTimeReps: 6100, weeklyReps: 150, streak: 38, isFriend: true },
-  { name: 'PushPro', xp: 1000, allTimeReps: 4800, weeklyReps: 220, streak: 29, isFriend: false },
-  { name: 'SquatStar', xp: 1000, allTimeReps: 3950, weeklyReps: 180, streak: 22, isFriend: false },
+// In production this list comes from backend + auth.
+const communityUsers = [
+  { code: 'SNS-IRON01', name: 'IronMike', xp: 20000, allTimeReps: 14520, weeklyReps: 310, streak: 89 },
+  { code: 'SNS-SQEE02', name: 'SweatQueen', xp: 12000, allTimeReps: 12340, weeklyReps: 420, streak: 72 },
+  { code: 'SNS-REPK03', name: 'RepKing', xp: 8000, allTimeReps: 10890, weeklyReps: 280, streak: 61 },
+  { code: 'SNS-CORE04', name: 'CoreCrusher', xp: 5500, allTimeReps: 9200, weeklyReps: 195, streak: 54 },
+  { code: 'SNS-PLNK05', name: 'PlankMaster', xp: 3500, allTimeReps: 7600, weeklyReps: 350, streak: 45 },
+  { code: 'SNS-GAIN06', name: 'GainzGuru', xp: 2000, allTimeReps: 6100, weeklyReps: 150, streak: 38 },
+  { code: 'SNS-PUSH07', name: 'PushPro', xp: 1000, allTimeReps: 4800, weeklyReps: 220, streak: 29 },
+  { code: 'SNS-SQAT08', name: 'SquatStar', xp: 1000, allTimeReps: 3950, weeklyReps: 180, streak: 22 },
 ];
 
 const TABS = ['All Time', 'This Week', 'Friends'];
 
 export default function RanksScreen() {
-  const { state } = useContext(AppContext);
+  const { state, dispatch } = useContext(AppContext);
   const [activeTab, setActiveTab] = useState(0);
+  const [friendCodeInput, setFriendCodeInput] = useState('');
+  const [referralInput, setReferralInput] = useState('');
+  const [displayNameInput, setDisplayNameInput] = useState(state.socialProfile?.displayName || 'You');
+  const [socialNotice, setSocialNotice] = useState('');
+  const [copied, setCopied] = useState(false);
+  const [liveUsers, setLiveUsers] = useState([]);
+  const [backendError, setBackendError] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadLive() {
+      if (!isSocialBackendConfigured()) {
+        setLiveUsers([]);
+        return;
+      }
+      try {
+        const rows = await fetchLeaderboardProfiles();
+        if (cancelled) return;
+        const mapped = rows.map((r) => ({
+          code: r.referral_code,
+          name: r.display_name || 'Sweater',
+          xp: Number(r.xp || 0),
+          allTimeReps: Number(r.all_time_reps || 0),
+          weeklyReps: Number(r.weekly_reps || 0),
+          streak: Number(r.streak || 0),
+        }));
+        setLiveUsers(mapped);
+        setBackendError('');
+      } catch {
+        if (!cancelled) setBackendError('Live leaderboard unavailable — showing local data.');
+      }
+    }
+    loadLive();
+    return () => {
+      cancelled = true;
+    };
+  }, [state.totalReps, state.xp, state.streak, state.socialProfile]);
 
   // Build ranked list based on active tab
   const rankedList = useMemo(() => {
-    let pool = [...simulatedUsers];
+    const friendCodes = state.socialProfile?.friends || [];
+    const seed = liveUsers.length > 0 ? liveUsers : communityUsers;
+    let pool = seed.map(u => ({
+      ...u,
+      isFriend: friendCodes.includes(u.code),
+    }));
 
     // Add "You" to the pool
-    const userLevel = getLevelForXP(state.xp);
     const you = {
-      name: 'You',
+      code: state.socialProfile?.referralCode,
+      name: state.socialProfile?.displayName || 'You',
       xp: state.xp,
       allTimeReps: state.totalReps,
       weeklyReps: state.totalReps, // approximation — proper implementation tracks weekly
       streak: state.streak,
-      isFriend: true, // you always appear in friends
+      isFriend: true,
       isYou: true,
     };
     pool.push(you);
@@ -54,7 +96,7 @@ export default function RanksScreen() {
       level: getLevelForXP(user.xp),
       displayReps: activeTab === 1 ? user.weeklyReps : user.allTimeReps,
     }));
-  }, [activeTab, state.xp, state.totalReps, state.streak]);
+  }, [activeTab, liveUsers, state.socialProfile, state.xp, state.totalReps, state.streak]);
 
   const top3 = rankedList.slice(0, 3);
   const rest = rankedList.slice(3);
@@ -63,9 +105,85 @@ export default function RanksScreen() {
   const userInList = rankedList.find(u => u.isYou);
   const userInRest = rest.find(u => u.isYou);
 
+  const saveDisplayName = () => {
+    dispatch({ type: 'SET_DISPLAY_NAME', payload: displayNameInput });
+    setSocialNotice('Display name updated.');
+  };
+
+  const addFriendByCode = () => {
+    if (!friendCodeInput.trim()) return;
+    dispatch({ type: 'ADD_FRIEND_CODE', payload: friendCodeInput });
+    setSocialNotice(`Friend code ${friendCodeInput.trim().toUpperCase()} added.`);
+    setFriendCodeInput('');
+  };
+
+  const applyReferral = () => {
+    if (!referralInput.trim()) return;
+    dispatch({ type: 'APPLY_REFERRAL_CODE', payload: referralInput });
+    setSocialNotice(`Referral code ${referralInput.trim().toUpperCase()} applied.`);
+    setReferralInput('');
+  };
+
+  const copyReferralCode = async () => {
+    const code = state.socialProfile?.referralCode;
+    if (!code) return;
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      setSocialNotice(`Your code: ${code}`);
+    }
+  };
+
   return (
     <div style={styles.screen}>
       <div style={styles.title}>Leaderboard</div>
+
+      <div style={styles.socialCard}>
+        <div style={styles.socialHeader}>Social</div>
+        {!isSocialBackendConfigured() && (
+          <div style={styles.notice}>Live backend not configured yet. Add Supabase env vars to publish cross-user leaderboard.</div>
+        )}
+        {backendError && <div style={styles.notice}>{backendError}</div>}
+        <div style={styles.socialRow}>
+          <input
+            value={displayNameInput}
+            onChange={(e) => setDisplayNameInput(e.target.value)}
+            placeholder="Display name"
+            style={styles.input}
+          />
+          <button onClick={saveDisplayName} style={styles.smallBtn}>Save</button>
+        </div>
+        <div style={styles.socialRow}>
+          <div style={styles.codePill}>{state.socialProfile?.referralCode}</div>
+          <button onClick={copyReferralCode} style={styles.smallBtn}>{copied ? 'Copied' : 'Copy Code'}</button>
+        </div>
+        <div style={styles.socialRow}>
+          <input
+            value={friendCodeInput}
+            onChange={(e) => setFriendCodeInput(e.target.value)}
+            placeholder="Add friend code"
+            style={styles.input}
+          />
+          <button onClick={addFriendByCode} style={styles.smallBtn}>Add</button>
+        </div>
+        {!state.socialProfile?.referredBy && (
+          <div style={styles.socialRow}>
+            <input
+              value={referralInput}
+              onChange={(e) => setReferralInput(e.target.value)}
+              placeholder="Apply referral code"
+              style={styles.input}
+            />
+            <button onClick={applyReferral} style={styles.smallBtn}>Apply</button>
+          </div>
+        )}
+        {state.socialProfile?.referredBy && (
+          <div style={styles.notice}>Referred by: {state.socialProfile.referredBy}</div>
+        )}
+        {socialNotice && <div style={styles.notice}>{socialNotice}</div>}
+      </div>
 
       {/* Category tabs */}
       <div style={styles.tabs}>
@@ -180,6 +298,66 @@ const styles = {
     letterSpacing: 1,
     color: '#F4F1EB',
     padding: '8px 24px 16px',
+  },
+  socialCard: {
+    margin: '0 20px 14px',
+    padding: '14px',
+    borderRadius: 14,
+    background: 'rgba(255,255,255,0.04)',
+    border: '1px solid rgba(255,255,255,0.08)',
+  },
+  socialHeader: {
+    fontSize: 11,
+    letterSpacing: 1.3,
+    textTransform: 'uppercase',
+    color: '#9AA0B8',
+    marginBottom: 10,
+    fontWeight: 700,
+  },
+  socialRow: {
+    display: 'flex',
+    gap: 8,
+    marginBottom: 8,
+  },
+  input: {
+    flex: 1,
+    background: 'rgba(255,255,255,0.06)',
+    border: '1px solid rgba(255,255,255,0.1)',
+    borderRadius: 10,
+    color: '#F4F1EB',
+    fontSize: 12,
+    padding: '10px 12px',
+    outline: 'none',
+    fontFamily: "'DM Sans', sans-serif",
+  },
+  smallBtn: {
+    background: 'rgba(232,83,58,0.15)',
+    border: '1px solid rgba(232,83,58,0.35)',
+    borderRadius: 10,
+    color: '#E8533A',
+    fontSize: 12,
+    padding: '10px 12px',
+    fontWeight: 700,
+    cursor: 'pointer',
+    fontFamily: "'DM Sans', sans-serif",
+    WebkitTapHighlightColor: 'transparent',
+  },
+  codePill: {
+    flex: 1,
+    borderRadius: 10,
+    background: 'rgba(46,204,113,0.1)',
+    border: '1px solid rgba(46,204,113,0.28)',
+    color: '#2ECC71',
+    fontWeight: 700,
+    fontSize: 12,
+    padding: '10px 12px',
+    letterSpacing: 0.6,
+  },
+  notice: {
+    fontSize: 11,
+    color: '#9AA0B8',
+    lineHeight: 1.4,
+    marginTop: 2,
   },
   tabs: {
     display: 'flex',

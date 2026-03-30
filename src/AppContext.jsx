@@ -8,6 +8,7 @@ import {
   vibrateScrollTimeUp,
   showScrollTimeUpPageNotification,
 } from './services/notificationService';
+import { isSocialBackendConfigured, syncSocialProfile } from './services/socialService';
 
 /**
  * SweatNScroll App State Management
@@ -15,6 +16,25 @@ import {
  */
 
 const STORAGE_KEY = 'sweatnscroll_state';
+
+function createReferralCode() {
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let out = 'SNS-';
+  for (let i = 0; i < 6; i += 1) {
+    out += alphabet[Math.floor(Math.random() * alphabet.length)];
+  }
+  return out;
+}
+
+function estimateLeaderboardRank(totalReps = 0) {
+  if (totalReps >= 12000) return 1;
+  if (totalReps >= 9000) return 2;
+  if (totalReps >= 7000) return 3;
+  if (totalReps >= 5000) return 5;
+  if (totalReps >= 3000) return 9;
+  if (totalReps >= 1500) return 15;
+  return 25;
+}
 
 const initialState = {
   // Onboarding
@@ -31,8 +51,15 @@ const initialState = {
   streak: 0,
   totalReps: 0,
   sessionsCompleted: 0,
+  leaderboardRank: 25,
   dailyHistory: {},
   exerciseBests: {},
+  socialProfile: {
+    displayName: 'You',
+    referralCode: createReferralCode(),
+    referredBy: null,
+    friends: [],
+  },
 
   // Current session
   currentExercise: null,
@@ -78,6 +105,13 @@ function loadState() {
       return {
         ...initialState,
         ...parsed,
+        leaderboardRank: parsed.leaderboardRank || estimateLeaderboardRank(parsed.totalReps || 0),
+        socialProfile: {
+          ...initialState.socialProfile,
+          ...(parsed.socialProfile || {}),
+          referralCode: parsed?.socialProfile?.referralCode || createReferralCode(),
+          friends: Array.isArray(parsed?.socialProfile?.friends) ? parsed.socialProfile.friends : [],
+        },
         currentExercise: null,
         repsCompleted: 0,
         earnedMinutes: scrollStillActive ? (parsed.earnedMinutes || 0) : 0,
@@ -195,6 +229,7 @@ function reducer(state, action) {
         totalReps: state.totalReps + reps,
         xp: newXP,
         sessionsCompleted: state.sessionsCompleted + 1,
+        leaderboardRank: estimateLeaderboardRank(state.totalReps + reps),
         lastTwoExercises: lastTwo,
         dailyHistory: updatedDailyHistory,
         exerciseBests: updatedBests,
@@ -363,6 +398,43 @@ function reducer(state, action) {
     case 'UPDATE_FORM_STATUS':
       return { ...state, formStatus: action.payload };
 
+    case 'SET_DISPLAY_NAME': {
+      const next = (action.payload || '').trim().slice(0, 20);
+      if (!next) return state;
+      return {
+        ...state,
+        socialProfile: {
+          ...state.socialProfile,
+          displayName: next,
+        },
+      };
+    }
+
+    case 'ADD_FRIEND_CODE': {
+      const code = (action.payload || '').trim().toUpperCase();
+      if (!code || code === state.socialProfile.referralCode) return state;
+      if (state.socialProfile.friends.includes(code)) return state;
+      return {
+        ...state,
+        socialProfile: {
+          ...state.socialProfile,
+          friends: [...state.socialProfile.friends, code].slice(0, 100),
+        },
+      };
+    }
+
+    case 'APPLY_REFERRAL_CODE': {
+      const code = (action.payload || '').trim().toUpperCase();
+      if (!code || code === state.socialProfile.referralCode || state.socialProfile.referredBy) return state;
+      return {
+        ...state,
+        socialProfile: {
+          ...state.socialProfile,
+          referredBy: code,
+        },
+      };
+    }
+
     default:
       return state;
   }
@@ -384,6 +456,31 @@ export function AppProvider({ children }) {
     saveState(state);
   }, [state]);
 
+  // Best-effort social sync for live leaderboard backend (if configured).
+  useEffect(() => {
+    if (!isSocialBackendConfigured()) return;
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        if (!cancelled) await syncSocialProfile(state);
+      } catch {
+        // Keep app fully functional if social backend is unavailable.
+      }
+    }, 300);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [
+    state.xp,
+    state.totalReps,
+    state.streak,
+    state.socialProfile?.displayName,
+    state.socialProfile?.referralCode,
+    state.socialProfile?.referredBy,
+    JSON.stringify(state.socialProfile?.friends || []),
+  ]);
+
   useEffect(() => {
     if (state.onboardingComplete && state.disclaimerAccepted && !state.currentExercise && !state.showEquipmentSetup) {
       dispatch({ type: 'NEW_SET' });
@@ -392,7 +489,12 @@ export function AppProvider({ children }) {
 
   // Schedule SW notification for scroll end (survives tab backgrounding; do not tie to ScrollingScreen mount).
   useEffect(() => {
-    if (!state.isScrolling || !state.scrollEndTime || state.scrollTimeUp) {
+    if (
+      !state.settings?.notificationsEnabled ||
+      !state.isScrolling ||
+      !state.scrollEndTime ||
+      state.scrollTimeUp
+    ) {
       cancelScrollEndNotification();
       return;
     }
@@ -400,7 +502,7 @@ export function AppProvider({ children }) {
     return () => {
       cancelScrollEndNotification();
     };
-  }, [state.isScrolling, state.scrollEndTime, state.scrollTimeUp]);
+  }, [state.settings?.notificationsEnabled, state.isScrolling, state.scrollEndTime, state.scrollTimeUp]);
 
   // ─── Global scroll timer ───────────────────────────────────────────────────
   // Runs at the AppProvider level so it keeps ticking regardless of which
@@ -433,7 +535,9 @@ export function AppProvider({ children }) {
 
       // Foreground only — background tabs freeze JS; user gets the SW notification instead.
       if (typeof document !== 'undefined' && !document.hidden) {
-        showScrollTimeUpPageNotification();
+        if (state.settings?.notificationsEnabled) {
+          showScrollTimeUpPageNotification();
+        }
         try {
           if (typeof window !== 'undefined') {
             window.setTimeout(() => {
@@ -464,7 +568,7 @@ export function AppProvider({ children }) {
       if (timerRef.current) clearInterval(timerRef.current);
       document.removeEventListener('visibilitychange', handleVisibility);
     };
-  }, [state.isScrolling, state.scrollEndTime, state.scrollTimeUp]);
+  }, [state.settings?.notificationsEnabled, state.isScrolling, state.scrollEndTime, state.scrollTimeUp]);
 
   return (
     <AppContext.Provider value={{ state, dispatch }}>

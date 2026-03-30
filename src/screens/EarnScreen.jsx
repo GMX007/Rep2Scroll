@@ -97,7 +97,7 @@ export default function EarnScreen() {
           <div style={styles.miniStatKey}>Total Reps</div>
         </div>
         <div style={styles.miniStat}>
-          <div style={styles.miniStatVal}>#{leaderboardRank}</div>
+          <div style={styles.miniStatVal}>#{leaderboardRank || '-'}</div>
           <div style={styles.miniStatKey}>Leaderboard</div>
         </div>
       </div>

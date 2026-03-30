@@ -8,9 +8,15 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       strategies: 'injectManifest',
+      /** Manual registration in main.jsx with `immediate: true` (before window.load). */
+      injectRegister: false,
       srcDir: 'src',
       filename: 'sw.js',
-      includeAssets: ['icons/*.png'],
+      devOptions: {
+        enabled: true,
+        type: 'module',
+      },
+      includeAssets: ['favicon.svg'],
       manifest: {
         name: 'SweatNScroll',
         short_name: 'SweatNScroll',
@@ -20,9 +26,9 @@ export default defineConfig({
         display: 'standalone',
         orientation: 'portrait',
         icons: [
-          { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
-          { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
-          { src: '/icons/icon-180.png', sizes: '180x180', type: 'image/png', purpose: 'apple touch icon' }
+          { src: '/favicon.svg', sizes: '192x192', type: 'image/svg+xml' },
+          { src: '/favicon.svg', sizes: '512x512', type: 'image/svg+xml' },
+          { src: '/favicon.svg', sizes: '180x180', type: 'image/svg+xml', purpose: 'any' }
         ]
       },
       injectManifest: {
