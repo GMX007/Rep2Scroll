@@ -28,6 +28,8 @@ export default function RanksScreen() {
   const [liveUsers, setLiveUsers] = useState([]);
   const [backendError, setBackendError] = useState('');
 
+  const normalizeCode = (value) => (value || '').trim().toUpperCase();
+
   useEffect(() => {
     let cancelled = false;
     async function loadLive() {
@@ -60,16 +62,43 @@ export default function RanksScreen() {
 
   // Build ranked list based on active tab
   const rankedList = useMemo(() => {
-    const friendCodes = state.socialProfile?.friends || [];
+    const ownCode = normalizeCode(state.socialProfile?.referralCode);
+    const friendCodes = (state.socialProfile?.friends || []).map(normalizeCode).filter(Boolean);
     const seed = liveUsers.length > 0 ? liveUsers : communityUsers;
-    let pool = seed.map(u => ({
-      ...u,
-      isFriend: friendCodes.includes(u.code),
-    }));
+    const byCode = new Map();
+    for (const u of seed) {
+      const code = normalizeCode(u.code);
+      if (!code || code === ownCode) continue; // prevent duplicate "You" from backend row
+      if (!byCode.has(code)) {
+        byCode.set(code, {
+          ...u,
+          code,
+          isFriend: friendCodes.includes(code),
+        });
+      }
+    }
+
+    // Show pending friend placeholders so add-code feels immediate even before friend's data syncs.
+    for (const code of friendCodes) {
+      if (!byCode.has(code)) {
+        byCode.set(code, {
+          code,
+          name: `Friend ${code.slice(-4)}`,
+          xp: 0,
+          allTimeReps: 0,
+          weeklyReps: 0,
+          streak: 0,
+          isFriend: true,
+          isPending: true,
+        });
+      }
+    }
+
+    let pool = [...byCode.values()];
 
     // Add "You" to the pool
     const you = {
-      code: state.socialProfile?.referralCode,
+      code: ownCode,
       name: state.socialProfile?.displayName || 'You',
       xp: state.xp,
       allTimeReps: state.totalReps,
@@ -111,9 +140,10 @@ export default function RanksScreen() {
   };
 
   const addFriendByCode = () => {
-    if (!friendCodeInput.trim()) return;
-    dispatch({ type: 'ADD_FRIEND_CODE', payload: friendCodeInput });
-    setSocialNotice(`Friend code ${friendCodeInput.trim().toUpperCase()} added.`);
+    const code = normalizeCode(friendCodeInput);
+    if (!code) return;
+    dispatch({ type: 'ADD_FRIEND_CODE', payload: code });
+    setSocialNotice(`Friend code ${code} added.`);
     setFriendCodeInput('');
   };
 
@@ -242,7 +272,7 @@ export default function RanksScreen() {
       {/* Full list */}
       <div style={styles.list}>
         {rest.map(entry => (
-          <div key={entry.name} style={{
+          <div key={entry.code || `${entry.name}-${entry.rank}`} style={{
             ...styles.listItem,
             ...(entry.isYou ? { background: 'rgba(232,83,58,0.08)', border: '1px solid rgba(232,83,58,0.2)' } : {}),
           }}>
@@ -253,7 +283,7 @@ export default function RanksScreen() {
                 {entry.name}
               </div>
               <div style={{ fontSize: 11, color: '#9AA0B8' }}>
-                {entry.level.name} &middot; {'🔥'}{entry.streak} streak
+                {entry.level.name} &middot; {'🔥'}{entry.streak} streak {entry.isPending ? '· pending sync' : ''}
               </div>
             </div>
             <div style={{ textAlign: 'right' }}>

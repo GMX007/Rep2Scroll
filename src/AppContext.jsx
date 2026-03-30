@@ -26,6 +26,10 @@ function createReferralCode() {
   return out;
 }
 
+function normalizeCode(code) {
+  return (code || '').trim().toUpperCase();
+}
+
 function estimateLeaderboardRank(totalReps = 0) {
   if (totalReps >= 12000) return 1;
   if (totalReps >= 9000) return 2;
@@ -411,14 +415,16 @@ function reducer(state, action) {
     }
 
     case 'ADD_FRIEND_CODE': {
-      const code = (action.payload || '').trim().toUpperCase();
-      if (!code || code === state.socialProfile.referralCode) return state;
-      if (state.socialProfile.friends.includes(code)) return state;
+      const code = normalizeCode(action.payload);
+      const ownCode = normalizeCode(state.socialProfile.referralCode);
+      const friends = (state.socialProfile.friends || []).map(normalizeCode);
+      if (!code || code === ownCode) return state;
+      if (friends.includes(code)) return state;
       return {
         ...state,
         socialProfile: {
           ...state.socialProfile,
-          friends: [...state.socialProfile.friends, code].slice(0, 100),
+          friends: [...friends, code].slice(0, 100),
         },
       };
     }
