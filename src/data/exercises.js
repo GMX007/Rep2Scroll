@@ -1454,14 +1454,28 @@ const repScaleFactors = {
   active:   { male: 1.25, female: 1.1  },
 };
 
-export function getScaledTarget(exercise, gender = 'male', activityLevel = 'moderate') {
+/** Completed sessions before the current one — gently raises targets over time (capped). */
+const PROGRESSION_MAX_BONUS = 0.3;
+const PROGRESSION_SQRT_COEF = 0.05;
+
+/**
+ * Multiplier applied after activity/gender scaling. Uses sqrt(sessions) so early progression
+ * is noticeable, then tapers; caps at +30%.
+ */
+export function getProgressionMultiplier(sessionsCompleted = 0) {
+  const n = Math.max(0, Number(sessionsCompleted) || 0);
+  return 1 + Math.min(PROGRESSION_MAX_BONUS, PROGRESSION_SQRT_COEF * Math.sqrt(n));
+}
+
+export function getScaledTarget(exercise, gender = 'male', activityLevel = 'moderate', sessionsCompleted = 0) {
   const base = exercise.defaultTarget;
   const factor = repScaleFactors[activityLevel]?.[gender] ?? 1.0;
   const scaled = Math.round(base * factor);
+  const progressed = Math.round(scaled * getProgressionMultiplier(sessionsCompleted));
   if (exercise.type === 'hold') {
-    return Math.max(10, Math.round(scaled / 5) * 5);
+    return Math.max(10, Math.round(progressed / 5) * 5);
   }
-  return Math.max(3, Math.round(scaled / 2) * 2);
+  return Math.max(3, Math.round(progressed / 2) * 2);
 }
 
 export function getRandomExercise(tier, lastTwo = [], userEquipment = []) {

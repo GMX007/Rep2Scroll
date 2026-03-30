@@ -67,7 +67,7 @@ export default function CameraScreen({ exercise, onComplete, onSwitchExercise })
   }, [reps, holdTime, lastFlagMessage, onComplete]);
 
   const isHold = exercise?.type === 'hold';
-  const target = getScaledTarget(exercise, state.gender, state.activityLevel);
+  const target = getScaledTarget(exercise, state.gender, state.activityLevel, state.sessionsCompleted);
 
   // Start camera
   useEffect(() => {

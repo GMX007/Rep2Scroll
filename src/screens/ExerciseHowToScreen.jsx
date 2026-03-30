@@ -1,12 +1,18 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import Button from '../components/Button';
+import { AppContext } from '../AppContext';
+import { getScaledTarget } from '../data/exercises';
 
 /**
  * How-to screen shown before the camera launches.
  * Explains how the AI camera works so the user knows what to expect.
  */
 export default function ExerciseHowToScreen({ exercise, onReady }) {
+  const { state } = useContext(AppContext);
   const isHold = exercise?.type === 'hold';
+  const target = exercise
+    ? getScaledTarget(exercise, state.gender, state.activityLevel, state.sessionsCompleted)
+    : isHold ? 30 : 14;
 
   return (
     <div style={styles.screen}>
@@ -51,8 +57,8 @@ export default function ExerciseHowToScreen({ exercise, onReady }) {
             </div>
             <div style={styles.stepDesc}>
               {isHold
-                ? `Hold the position for ${exercise?.defaultTarget || 30} seconds. The AI counts the time for you — just focus on form!`
-                : `Complete ${exercise?.defaultTarget || 14} reps. The AI counts each one automatically — you'll hear a ding and feel a buzz for each rep!`
+                ? `Hold the position for ${target} seconds. The AI counts the time for you — just focus on form!`
+                : `Complete ${target} reps. The AI counts each one automatically — you'll hear a ding and feel a buzz for each rep!`
               }
             </div>
           </div>

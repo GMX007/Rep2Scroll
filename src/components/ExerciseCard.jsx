@@ -9,7 +9,9 @@ import { getScaledTarget } from '../data/exercises';
 export default function ExerciseCard({ exercise, reps = 0, onStart }) {
   const [showInfo, setShowInfo] = useState(false);
   const { state } = useContext(AppContext);
-  const target = exercise ? getScaledTarget(exercise, state.gender, state.activityLevel) : 14;
+  const target = exercise
+    ? getScaledTarget(exercise, state.gender, state.activityLevel, state.sessionsCompleted)
+    : 14;
   const isHold = exercise?.type === 'hold';
 
   return (
