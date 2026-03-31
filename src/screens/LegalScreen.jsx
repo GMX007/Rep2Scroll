@@ -45,9 +45,6 @@ export default function LegalScreen({ type = 'privacy', onClose }) {
               You can delete all your local data at any time by clearing your browser's site data for Rep2Scroll. To delete your account and server-side data, contact support and we will remove everything within 30 days.
             </Section>
 
-            <Section title="Contact">
-              Questions about your privacy? Reach us at privacy@sweatnscroll.app
-            </Section>
           </>
         ) : (
           <>
