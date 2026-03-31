@@ -34,7 +34,7 @@ export default function LegalScreen({ type = 'privacy', onClose }) {
             </Section>
 
             <Section title="Payment Data">
-              Payments are processed by Stripe. Rep2Scroll never sees or stores your credit card number, CVV, or banking details. Stripe's privacy policy governs payment data handling.
+              Purchases and subscriptions on iOS are processed by Apple through the App Store and your Apple ID. Rep2Scroll does not collect or store your full credit card number, CVV, or banking details. Apple handles payment processing and related billing data under Apple's terms and privacy policy.
             </Section>
 
             <Section title="Analytics">
@@ -65,7 +65,7 @@ export default function LegalScreen({ type = 'privacy', onClose }) {
             </Section>
 
             <Section title="Subscriptions">
-              Standard tier subscriptions are billed through Stripe. Monthly and annual plans auto-renew until cancelled. You can cancel anytime from your Stripe customer portal. Lifetime access covers the Standard tier only and does not include any future Premium tier features.
+              Standard tier subscriptions purchased on iOS are billed by Apple as in-app subscriptions and may auto-renew until cancelled. You can manage or cancel subscriptions from your Apple ID subscription settings. Any available lifetime access applies to the Standard tier only and does not include future Premium tier features unless explicitly stated in the App Store listing.
             </Section>
 
             <Section title="Account Termination">

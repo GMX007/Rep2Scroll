@@ -97,13 +97,13 @@ const styles = {
   },
   topRow: {
     display: 'flex',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     gap: 10,
   },
   appIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 9,
+    width: 52,
+    height: 52,
+    borderRadius: 12,
     flexShrink: 0,
   },
   text: {
