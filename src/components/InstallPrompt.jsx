@@ -67,7 +67,7 @@ export default function InstallPrompt() {
       <div style={styles.topRow}>
         <SweatDrop />
         <div style={styles.text}>
-          <div style={styles.title}>Add SweatNScroll to your phone!</div>
+          <div style={styles.title}>Add Rep2Scroll to your phone!</div>
           <div style={styles.sub}>
             {isIOS
               ? "Tap the Share button (the square with an arrow) at the bottom of Safari, then tap \"Add to Home Screen\""

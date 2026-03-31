@@ -28,7 +28,7 @@ export default function ExercisePickerScreen() {
 
       <div style={styles.header}>
         <button onClick={handleBack} style={styles.backBtn}>{'←'}</button>
-        <span style={styles.logo}>SWEATNSCROLL</span>
+        <span style={styles.logo}>REP2SCROLL</span>
         <div style={{ width: 32 }} />
       </div>
 

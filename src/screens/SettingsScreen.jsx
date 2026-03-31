@@ -135,7 +135,7 @@ export default function SettingsScreen() {
       <div style={styles.honorCard}>
         <div style={{ fontSize: 20, marginBottom: 8 }}>{'🎯'}</div>
         <div style={{ fontSize: 13, color: 'rgba(244,241,235,0.8)', lineHeight: 1.6, textAlign: 'center' }}>
-          SweatNScroll works on the honor system — the discipline is yours. That's the point.
+          Rep2Scroll works on the honor system — the discipline is yours. That's the point.
         </div>
       </div>
 

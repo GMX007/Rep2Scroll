@@ -11,7 +11,7 @@ import {
 import { isSocialBackendConfigured, syncSocialProfile } from './services/socialService';
 
 /**
- * SweatNScroll App State Management
+ * Rep2Scroll App State Management
  * Handles: effort bar, reps, sessions, XP, settings, onboarding flow
  */
 

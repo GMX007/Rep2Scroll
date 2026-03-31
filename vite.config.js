@@ -18,8 +18,8 @@ export default defineConfig({
       },
       includeAssets: ['favicon.svg'],
       manifest: {
-        name: 'SweatNScroll',
-        short_name: 'SweatNScroll',
+        name: 'Rep2Scroll',
+        short_name: 'Rep2Scroll',
         description: 'Earn your scroll time. Every session. No exceptions.',
         theme_color: '#E8533A',
         background_color: '#0F1647',

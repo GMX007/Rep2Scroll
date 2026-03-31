@@ -18,7 +18,7 @@ export default function ExerciseHowToScreen({ exercise, onReady }) {
     <div style={styles.screen}>
       {/* Header */}
       <div style={styles.header}>
-        <span style={styles.logo}>SWEATNSCROLL</span>
+        <span style={styles.logo}>REP2SCROLL</span>
       </div>
 
       {/* Title */}

@@ -1,5 +1,5 @@
 /**
- * SweatNScroll Design System Tokens
+ * Rep2Scroll Design System Tokens
  * Matches the UI prototype exactly
  */
 

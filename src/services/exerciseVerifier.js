@@ -1,5 +1,5 @@
 /**
- * SweatNScroll Exercise Verifier
+ * Rep2Scroll Exercise Verifier
  * Applies exercise-specific form rules to MoveNet keypoints.
  * Every exercise in `exercises.js` maps here (bodyweight + equipment).
  * Equipment moves use closest pose heuristics (elbow angle, squat, hinge, etc.).

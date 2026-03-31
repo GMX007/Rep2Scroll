@@ -1,5 +1,5 @@
 /**
- * SweatNScroll Gamification Levels
+ * Rep2Scroll Gamification Levels
  * Free tier: levels 1-3 only
  * Standard tier: levels 1-10
  */

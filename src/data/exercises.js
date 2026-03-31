@@ -1,5 +1,5 @@
 /**
- * SweatNScroll Exercise Library
+ * Rep2Scroll Exercise Library
  * Free tier: Push-up, Squat, Plank
  * Standard tier: 65+ additional exercises (abbreviated here, expand as needed)
  */

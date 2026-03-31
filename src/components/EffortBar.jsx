@@ -1,7 +1,7 @@
 import React from 'react';
 
 /**
- * Circular SVG progress ring — the central UI element of SweatNScroll.
+ * Circular SVG progress ring — the central UI element of Rep2Scroll.
  * @param {number} progress - 0 to 1
  * @param {number} minutes - earned minutes to display
  * @param {string} label - text below the number

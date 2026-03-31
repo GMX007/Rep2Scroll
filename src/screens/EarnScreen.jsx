@@ -28,7 +28,7 @@ export default function EarnScreen() {
 
       {/* Header */}
       <div style={styles.header}>
-        <span style={styles.logo}>SWEATNSCROLL</span>
+        <span style={styles.logo}>REP2SCROLL</span>
         <LevelBadge level={level} />
       </div>
 
@@ -60,7 +60,7 @@ export default function EarnScreen() {
       ) : (
         <div style={{ marginTop: 18 }}>
           <Button onClick={handleStartExercise}>
-            Let's Sweat! {'💪'}
+            Let's rep! {'💪'}
           </Button>
         </div>
       )}

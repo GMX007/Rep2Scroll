@@ -57,7 +57,7 @@ export default function OnboardingScreen() {
         <div style={welcomeStyles.content}>
           {/* Logo */}
           <div style={welcomeStyles.logoIcon}>{'💪'}</div>
-          <div style={welcomeStyles.logo}>SWEATNSCROLL</div>
+          <div style={welcomeStyles.logo}>REP2SCROLL</div>
           <div style={welcomeStyles.tagline}>Sweat first. Scroll later. ✨</div>
 
           {/* Description */}

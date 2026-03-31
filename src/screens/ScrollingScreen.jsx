@@ -145,7 +145,7 @@ export default function ScrollingScreen({ onStop, minutes = 0, scrollEndTime = n
       };
       pipAnimRef.current = requestAnimationFrame(loop);
     } catch (err) {
-      console.warn('[SweatNScroll] PiP failed:', err);
+      console.warn('[Rep2Scroll] PiP failed:', err);
       setPipError(err?.message || 'Couldn’t open floating timer. Allow picture-in-picture if prompted, or rely on your notification when time is up.');
       setPipActive(false);
       if (pipAnimRef.current) {
