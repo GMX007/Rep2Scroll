@@ -59,7 +59,7 @@ self.addEventListener('message', (event) => {
       try {
         self.registration.showNotification("Time's up! ⏰ Back to work!", {
           body: "Your scroll time just ran out. Come back and sweat for more! 💪",
-          icon: '/favicon.svg',
+          icon: '/favicon.png',
           tag: 'scroll-timer',
           renotify: true,
           requireInteraction: true,

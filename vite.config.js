@@ -16,7 +16,7 @@ export default defineConfig({
         enabled: true,
         type: 'module',
       },
-      includeAssets: ['favicon.svg'],
+      includeAssets: ['favicon.png', 'apple-touch-icon.png'],
       manifest: {
         name: 'Rep2Scroll',
         short_name: 'Rep2Scroll',
@@ -26,9 +26,9 @@ export default defineConfig({
         display: 'standalone',
         orientation: 'portrait',
         icons: [
-          { src: '/favicon.svg', sizes: '192x192', type: 'image/svg+xml' },
-          { src: '/favicon.svg', sizes: '512x512', type: 'image/svg+xml' },
-          { src: '/favicon.svg', sizes: '180x180', type: 'image/svg+xml', purpose: 'any' }
+          { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+          { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+          { src: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png', purpose: 'any' }
         ]
       },
       injectManifest: {
