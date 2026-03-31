@@ -76,9 +76,6 @@ export default function LegalScreen({ type = 'privacy', onClose }) {
               We may update these terms. Continued use after changes constitutes acceptance. We will notify users of material changes via the app.
             </Section>
 
-            <Section title="Contact">
-              Questions? Reach us at legal@sweatnscroll.app
-            </Section>
           </>
         )}
       </div>

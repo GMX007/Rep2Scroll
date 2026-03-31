@@ -51,21 +51,10 @@ export default function InstallPrompt() {
 
   if (!showBanner || dismissed) return null;
 
-  // Sweatdrop icon — proper teardrop shape
-  const SweatDrop = () => (
-    <svg width="18" height="22" viewBox="0 0 18 22" style={{ marginRight: 8, flexShrink: 0 }}>
-      <path
-        d="M9 0 C9 0 0 10 0 14.5 C0 18.6 4 22 9 22 C14 22 18 18.6 18 14.5 C18 10 9 0 9 0Z"
-        fill="#4FC3F7"
-      />
-      <ellipse cx="6" cy="14" rx="2" ry="2.5" fill="rgba(255,255,255,0.35)" />
-    </svg>
-  );
-
   return (
     <div style={styles.banner}>
       <div style={styles.topRow}>
-        <SweatDrop />
+        <img src="/icon-192.png" alt="Rep2Scroll icon" style={styles.appIcon} />
         <div style={styles.text}>
           <div style={styles.title}>Add Rep2Scroll to your phone!</div>
           <div style={styles.sub}>
@@ -109,7 +98,13 @@ const styles = {
   topRow: {
     display: 'flex',
     alignItems: 'flex-start',
-    gap: 4,
+    gap: 10,
+  },
+  appIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 9,
+    flexShrink: 0,
   },
   text: {
     flex: 1,
